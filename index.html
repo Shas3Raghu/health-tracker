@@ -1,0 +1,2518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1120">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Reversal">
+  <title>6-Month Reversal Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0b1120;
+      --card-bg: rgba(30, 41, 59, 0.55);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-blue: #38bdf8;
+      --accent-emerald: #34d399;
+      --accent-purple: #c084fc;
+      --accent-amber: #fbbf24;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: calc(24px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient animated background glows */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.35;
+      z-index: -1;
+      pointer-events: none;
+    }
+    body::before {
+      width: 480px; height: 480px;
+      background: radial-gradient(circle, #1e3a8a, transparent 70%);
+      top: -140px; left: -120px;
+      animation: drift1 18s ease-in-out infinite alternate;
+    }
+    body::after {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, #4c1d95, transparent 70%);
+      bottom: -160px; right: -120px;
+      animation: drift2 22s ease-in-out infinite alternate;
+    }
+    @keyframes drift1 { to { transform: translate(60px, 50px) scale(1.15); } }
+    @keyframes drift2 { to { transform: translate(-50px, -40px) scale(1.1); } }
+
+    .container { max-width: 920px; margin: 0 auto; animation: fadeUp 0.6s ease both; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    header { text-align: center; margin-bottom: 20px; }
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(110deg, var(--accent-blue), var(--accent-purple), var(--accent-emerald));
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      animation: shine 6s linear infinite;
+    }
+    @keyframes shine { to { background-position: 200% center; } }
+    header p { color: var(--text-muted); font-size: 0.95rem; }
+
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      margin: 10px auto 22px;
+      color: var(--accent-emerald);
+      font-weight: 600;
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      padding: 6px 14px;
+      border-radius: 999px;
+    }
+    .sync-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
+      70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    .header-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .profile-chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(192,132,252,0.12); border: 1px solid rgba(192,132,252,0.3);
+      color: var(--text-main); font-weight: 700; font-size: 0.8rem;
+      padding: 6px 12px; border-radius: 999px; cursor: pointer;
+      touch-action: manipulation; transition: background 0.2s;
+    }
+    .profile-chip:hover { background: rgba(192,132,252,0.22); }
+    .profile-ava {
+      width: 20px; height: 20px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 800; color: #0f172a;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    }
+
+    /* PIN gate */
+    .pin-overlay { z-index: 1200; }
+    .pin-sheet {
+      background: #0f172a; border: 1px solid var(--card-border);
+      border-radius: 22px; width: 100%; max-width: 320px; padding: 28px 22px;
+      text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      animation: sheetIn 0.3s var(--ease-spring);
+    }
+    .pin-title { font-size: 1.3rem; font-weight: 800; color: var(--text-main); }
+    .pin-sub { color: var(--text-muted); font-size: 0.82rem; margin: 6px 0 18px; }
+    .pin-input {
+      width: 100%; text-align: center; font-size: 1.6rem; letter-spacing: 12px;
+      padding: 12px; border-radius: 12px; border: 1px solid var(--card-border);
+      background: rgba(15,23,42,0.6); color: #fff; margin-bottom: 10px;
+    }
+    .pin-input:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
+    .pin-error { color: #f87171; font-size: 0.8rem; font-weight: 600; min-height: 18px; margin-bottom: 10px; }
+    .shake { animation: shake 0.4s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
+
+    /* Profile picker overlay */
+    .profile-overlay { z-index: 1100; }
+    .profile-sheet {
+      background: #0f172a; border: 1px solid var(--card-border);
+      border-radius: 22px; width: 100%; max-width: 420px; padding: 26px 22px;
+      text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      animation: sheetIn 0.3s var(--ease-spring);
+    }
+    .profile-sheet-title {
+      font-size: 1.4rem; font-weight: 800;
+      background: linear-gradient(110deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .profile-sheet-sub { color: var(--text-muted); font-size: 0.85rem; margin: 6px 0 22px; }
+    .profile-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media(max-width: 380px) { .profile-cards { grid-template-columns: 1fr; } }
+    .profile-card {
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--card-border);
+      border-radius: 18px; padding: 22px 14px; cursor: pointer;
+      transition: transform 0.15s var(--ease-spring), border-color 0.2s, background 0.2s;
+      touch-action: manipulation;
+    }
+    .profile-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.07); }
+    .profile-card:active { transform: scale(0.97); }
+    .profile-card .profile-ava { width: 56px; height: 56px; font-size: 1.5rem; }
+    .profile-card.shas3 .profile-ava { background: linear-gradient(135deg, var(--accent-blue), var(--accent-emerald)); }
+    .profile-card.muji .profile-ava { background: linear-gradient(135deg, var(--accent-purple), var(--accent-amber)); }
+    .profile-card-name { font-size: 1.05rem; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    /* Daily progress ring in the header card */
+    .day-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .day-head-text { flex: 1; }
+    .day-head-text .day-name {
+      font-size: 1.25rem; font-weight: 700; color: var(--text-main);
+    }
+    .day-head-text .day-date { font-size: 0.85rem; color: var(--text-muted); margin-top: 3px; }
+
+    .progress-ring { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
+    .progress-ring svg { transform: rotate(-90deg); }
+    .progress-ring circle { fill: none; stroke-width: 7; stroke-linecap: round; }
+    .progress-ring .ring-bg { stroke: rgba(255,255,255,0.08); }
+    .progress-ring .ring-fill {
+      stroke: url(#ringGrad);
+      transition: stroke-dashoffset 0.6s var(--ease-spring);
+    }
+    .progress-ring .ring-label {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 800; color: var(--accent-emerald);
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .checklist-group { margin-bottom: 22px; }
+    .checklist-group:last-child { margin-bottom: 0; }
+    .checklist-group h3 {
+      font-size: 0.78rem; color: var(--accent-purple); margin-bottom: 12px;
+      text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 15px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid transparent;
+      margin-bottom: 10px;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .check-item:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255,255,255,0.1); }
+    .check-item:active { transform: scale(0.99); }
+    .check-item.completed { background: rgba(52, 211, 153, 0.07); border-color: rgba(52, 211, 153, 0.2); }
+
+    .check-left { display: flex; align-items: center; gap: 14px; flex: 1; }
+
+    .custom-checkbox {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--accent-blue);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s var(--ease-spring);
+      background: rgba(15, 23, 42, 0.6);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .check-item.completed .custom-checkbox {
+      background: linear-gradient(135deg, var(--accent-emerald), #10b981);
+      border-color: var(--accent-emerald);
+      box-shadow: 0 0 14px rgba(52, 211, 153, 0.5);
+      animation: pop 0.35s var(--ease-spring);
+    }
+    @keyframes pop {
+      0% { transform: scale(0.7); }
+      60% { transform: scale(1.18); }
+      100% { transform: scale(1); }
+    }
+
+    .custom-checkbox::after {
+      content: '✓';
+      color: #0f172a;
+      font-weight: 900;
+      font-size: 15px;
+      transform: scale(0);
+      transition: transform 0.25s var(--ease-spring);
+    }
+    .check-item.completed .custom-checkbox::after { transform: scale(1); }
+    .check-item.completed .item-label { text-decoration: line-through; color: var(--text-muted); }
+
+    .item-label { font-size: 0.95rem; font-weight: 600; color: #fff; transition: color 0.2s; }
+    .item-sub { font-size: 0.82rem; color: var(--text-muted); display: block; margin-top: 3px; line-height: 1.4; }
+
+    .yt-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(239, 68, 68, 0.14);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 7px 13px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .yt-btn:hover { background: rgba(239, 68, 68, 0.9); color: #fff; transform: translateY(-1px); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media(max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      header h1 { font-size: 1.8rem; }
+    }
+    @media(max-width: 480px) {
+      body { padding: 16px 12px 40px; }
+      .card { padding: 16px; border-radius: 16px; }
+      header h1 { font-size: 1.55rem; }
+      .cal-grid, .cal-weekdays { gap: 4px; }
+      .cal-tile { font-size: 0.82rem; border-radius: 10px; }
+      #cal-month-label { min-width: 96px; font-size: 0.85rem; }
+      .section-title { flex-wrap: wrap; gap: 8px; }
+      .modal-sheet { max-height: 90vh; padding: 16px; border-radius: 16px; }
+      .metric-input input { min-width: 70px; }
+    }
+
+    .water-tracker { text-align: center; }
+    .water-bubbles { display: flex; justify-content: center; gap: 9px; margin: 18px 0 14px; flex-wrap: wrap; }
+    .glass {
+      width: 30px; height: 44px;
+      border: 2px solid rgba(56, 189, 248, 0.5);
+      border-radius: 4px 4px 9px 9px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s var(--ease-spring), border-color 0.2s;
+      background: rgba(56, 189, 248, 0.05);
+      touch-action: manipulation;
+    }
+    .glass::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 0%;
+      background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+      transition: height 0.4s var(--ease-spring);
+    }
+    .glass.filled { border-color: var(--accent-blue); box-shadow: 0 0 12px rgba(56, 189, 248, 0.4); }
+    .glass.filled::after { height: 100%; }
+    .glass:hover { transform: translateY(-3px) scale(1.05); }
+
+    .water-count-big {
+      font-size: 1.6rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-emerald));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .water-sub { font-size: 0.82rem; color: var(--text-muted); }
+
+    .today-weight {
+      font-size: 1.15rem; font-weight: 800; margin-top: 4px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-emerald));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .today-weight.empty {
+      font-size: 0.85rem; font-weight: 600; color: var(--text-muted);
+      -webkit-text-fill-color: var(--text-muted);
+    }
+    .metric-hint { font-size: 0.74rem; color: var(--text-muted); margin-top: 8px; }
+
+    .metric-input { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .metric-input input {
+      flex: 1; min-width: 90px; padding: 11px 14px; border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: rgba(15, 23, 42, 0.6); color: #fff; font-size: 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .metric-input input::placeholder { color: var(--text-muted); }
+    .metric-input input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+    .btn {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-emerald));
+      color: #0f172a; border: none; padding: 11px 20px; border-radius: 12px;
+      font-weight: 700; cursor: pointer; font-size: 0.88rem;
+      transition: transform 0.15s var(--ease-spring), box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.25);
+      touch-action: manipulation;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4); }
+    .btn:active { transform: translateY(0) scale(0.97); }
+    .btn.saved { background: linear-gradient(135deg, var(--accent-emerald), #10b981); }
+    .btn.locked { background: rgba(148, 163, 184, 0.25); color: var(--text-muted); cursor: not-allowed; box-shadow: none; }
+    .btn.locked:hover { transform: none; }
+    .metric-input input:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 0; border-bottom: 1px solid var(--card-border);
+    }
+    .history-item:last-child { border-bottom: none; }
+    .history-item span { color: var(--text-muted); }
+
+    /* Calendar */
+    .cal-nav { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--text-main); }
+    .cal-arrow {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--card-border);
+      color: var(--text-main); width: 30px; height: 30px; border-radius: 9px;
+      font-size: 1.1rem; line-height: 1; cursor: pointer; transition: background 0.2s, transform 0.15s;
+    }
+    .cal-arrow:hover { background: rgba(255,255,255,0.14); }
+    .cal-arrow:active { transform: scale(0.92); }
+    #cal-month-label { min-width: 118px; text-align: center; font-weight: 700; }
+
+    .cal-weekdays {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+      margin-bottom: 8px; text-align: center;
+      font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;
+    }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .cal-tile {
+      position: relative; aspect-ratio: 1 / 1;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 12px; font-size: 0.9rem; font-weight: 600;
+      background: rgba(255,255,255,0.03); border: 1px solid transparent;
+      color: var(--text-main); cursor: pointer;
+      transition: transform 0.15s var(--ease-spring), background 0.2s, border-color 0.2s;
+      touch-action: manipulation;
+    }
+    .cal-tile.blank { background: transparent; cursor: default; }
+    .cal-tile.future { color: var(--text-muted); opacity: 0.45; cursor: default; }
+    .cal-tile:not(.blank):not(.future):hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+    .cal-tile:not(.blank):not(.future):active { transform: scale(0.95); }
+    .cal-tile.today { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue) inset; }
+    .cal-tile .tile-dot {
+      position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+      width: 6px; height: 6px; border-radius: 50%;
+    }
+    .tile-dot.done { background: var(--accent-emerald); box-shadow: 0 0 6px var(--accent-emerald); }
+    .tile-dot.partial { background: var(--accent-amber); }
+    .tile-dot.none { background: rgba(148,163,184,0.4); }
+    .cal-tile.done { background: rgba(52,211,153,0.12); }
+    .cal-tile.partial { background: rgba(251,191,36,0.1); }
+
+    .cal-legend {
+      display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+      margin-top: 14px; font-size: 0.72rem; color: var(--text-muted);
+    }
+    .cal-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .cal-legend .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .cal-legend .dot.done { background: var(--accent-emerald); }
+    .cal-legend .dot.partial { background: var(--accent-amber); }
+    .cal-legend .dot.none { background: rgba(148,163,184,0.4); }
+    .cal-legend .dot.today-dot { background: transparent; border: 2px solid var(--accent-blue); }
+
+    /* Today's nutrition totals */
+    .macro-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    @media(max-width: 560px) { .macro-grid { grid-template-columns: repeat(3, 1fr); } }
+    .macro-tile {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 15px 8px; text-align: center;
+    }
+    .macro-val { font-size: 1.45rem; font-weight: 800; line-height: 1; }
+    .macro-unit { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); margin-left: 2px; }
+    .macro-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-top: 6px; font-weight: 700; }
+    .macro-tile.cal .macro-val { color: var(--accent-amber); }
+    .macro-tile.pro .macro-val { color: var(--accent-emerald); }
+    .macro-tile.carb .macro-val { color: var(--accent-blue); }
+    .macro-tile.fat .macro-val { color: var(--accent-purple); }
+    .macro-tile.fib .macro-val { color: #2dd4bf; }
+    .macro-goal { font-size: 0.62rem; color: var(--text-muted); margin-top: 4px; font-weight: 600; }
+    .macro-bar { height: 5px; border-radius: 999px; background: rgba(255,255,255,0.08); margin-top: 7px; overflow: hidden; }
+    .macro-bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent-blue), var(--accent-emerald)); transition: width 0.5s var(--ease-spring); }
+    .macro-tile.hit { border-color: var(--accent-emerald); background: rgba(52,211,153,0.12); }
+    .macro-tile.hit .macro-bar span { background: var(--accent-emerald); }
+    .macro-note { font-size: 0.74rem; color: var(--text-muted); margin-top: 12px; }
+
+    /* Custom one-off meals */
+    .custom-meals { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .cm-item { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 10px; padding: 9px 12px; }
+    body.light .cm-item { background: rgba(15,23,42,0.04); }
+    .cm-item strong { font-size: 0.88rem; color: var(--text-main); }
+    .cm-item .cm-macros { font-size: 0.74rem; color: var(--text-muted); margin-top: 2px; }
+    .cm-remove { background: none; border: none; color: #f87171; cursor: pointer; font-size: 1rem; flex-shrink: 0; touch-action: manipulation; }
+
+    /* Weight trend sparkline */
+    .trend-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.8rem; }
+    .trend-range { color: var(--text-muted); }
+    .trend-latest { font-weight: 800; color: var(--accent-emerald); }
+    #weight-trend svg { width: 100%; height: auto; display: block; }
+    .trend-toggle { display: flex; gap: 6px; }
+    .trend-tab {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+      color: var(--text-muted); font-size: 0.72rem; font-weight: 700;
+      padding: 5px 10px; border-radius: 999px; cursor: pointer; touch-action: manipulation;
+    }
+    .trend-tab.active { background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.4); color: var(--accent-blue); }
+    .trend-sub-line { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 8px; text-align: center; }
+
+    /* Macro bar chart (protein / calories over time) */
+    .bars { position: relative; display: flex; align-items: flex-end; gap: 4px; height: 140px; }
+    .bar-col { flex: 1; display: flex; align-items: flex-end; justify-content: center; height: 100%; }
+    .bar { width: 100%; max-width: 20px; border-radius: 6px 6px 2px 2px; min-height: 2px;
+      background: linear-gradient(180deg, var(--accent-emerald), #10b981);
+      transition: height 0.4s var(--ease-spring); }
+    .bar.cal { background: linear-gradient(180deg, var(--accent-amber), #f59e0b); }
+    .bar-col.today .bar { box-shadow: 0 0 0 2px var(--accent-blue); }
+    .bars-x { display: flex; gap: 4px; margin-top: 6px; }
+    .bars-x span { flex: 1; text-align: center; font-size: 0.58rem; color: var(--text-muted); }
+    .bars-x span.today { color: var(--accent-blue); font-weight: 800; }
+    .goal-line { position: absolute; left: 0; right: 0; border-top: 1.5px dashed rgba(148,163,184,0.6); z-index: 1; }
+    .goal-line span { position: absolute; right: 0; top: -8px; font-size: 0.56rem; color: var(--text-muted); background: var(--bg-base); padding: 0 4px; }
+    .bars-foot { font-size: 0.74rem; color: var(--text-muted); margin-top: 10px; text-align: center; }
+
+    /* Adherence heatmap */
+    .heatmap-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+    .heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, auto); grid-auto-columns: 1fr; gap: 4px; width: 100%; }
+    .hm-cell { aspect-ratio: 1 / 1; border-radius: 4px; background: rgba(255,255,255,0.05); cursor: pointer; touch-action: manipulation; }
+    .hm-cell.future { background: transparent; cursor: default; }
+    .hm-cell.l1 { background: rgba(52,211,153,0.28); }
+    .hm-cell.l2 { background: rgba(52,211,153,0.48); }
+    .hm-cell.l3 { background: rgba(52,211,153,0.72); }
+    .hm-cell.l4 { background: #34d399; }
+    .hm-cell.today { box-shadow: 0 0 0 1.5px var(--accent-blue); }
+    .hm-legend { display: flex; align-items: center; gap: 5px; justify-content: flex-end; margin-top: 12px; font-size: 0.7rem; color: var(--text-muted); }
+    .hm-legend .hm-cell { width: 13px; height: 13px; aspect-ratio: auto; cursor: default; }
+    body.light .hm-cell { background: rgba(15,23,42,0.07); }
+    body.light .hm-cell.future { background: transparent; }
+
+    /* Progress photos */
+    .photo-today { margin: 4px 0 12px; }
+    .photo-thumb-lg { width: 100%; max-height: 300px; object-fit: cover; border-radius: 14px; cursor: pointer; display: block; }
+    .photo-empty { color: var(--text-muted); font-size: 0.85rem; padding: 22px; text-align: center; background: rgba(255,255,255,0.03); border-radius: 12px; }
+    body.light .photo-empty { background: rgba(15,23,42,0.04); }
+    .photo-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; margin-top: 14px; }
+    .photo-cell { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; cursor: pointer; touch-action: manipulation; }
+    .photo-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-date { position: absolute; bottom: 0; left: 0; right: 0; font-size: 0.56rem; text-align: center; background: rgba(0,0,0,0.55); color: #fff; padding: 2px 0; }
+    #photo-modal-img { width: 100%; border-radius: 12px; display: block; }
+
+    .mini-btn {
+      background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3);
+      color: var(--accent-blue); font-size: 0.72rem; font-weight: 700;
+      padding: 5px 11px; border-radius: 999px; cursor: pointer; touch-action: manipulation;
+      transition: background 0.2s;
+    }
+    .mini-btn:hover { background: rgba(56,189,248,0.22); }
+    .mini-btn.on { background: rgba(52,211,153,0.18); border-color: rgba(52,211,153,0.4); color: var(--accent-emerald); }
+    .goal-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .goal-field label { font-size: 0.88rem; color: var(--text-muted); font-weight: 600; }
+    .goal-field input {
+      width: 120px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--card-border);
+      background: rgba(15,23,42,0.6); color: #fff; font-size: 16px;
+    }
+    .goal-field input:focus { outline: none; border-color: var(--accent-blue); }
+
+    /* Day detail modal */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(2, 6, 23, 0.72); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-sheet {
+      background: #0f172a; border: 1px solid var(--card-border);
+      border-radius: 20px; width: 100%; max-width: 460px;
+      max-height: 85vh; max-height: 85dvh; overflow-y: auto; padding: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      animation: sheetIn 0.3s var(--ease-spring);
+      -webkit-overflow-scrolling: touch;
+    }
+    @keyframes sheetIn { from { opacity: 0; transform: translateY(24px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .modal-date { font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
+    .modal-day { font-size: 0.85rem; color: var(--accent-purple); font-weight: 600; margin-top: 2px; }
+    .modal-close {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--card-border);
+      color: var(--text-main); width: 34px; height: 34px; border-radius: 10px;
+      font-size: 0.9rem; cursor: pointer; flex-shrink: 0;
+    }
+    .modal-close:hover { background: rgba(255,255,255,0.14); }
+    .modal-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .summary-chip {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+      border-radius: 999px; padding: 6px 12px; font-size: 0.78rem; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .modal-section-title {
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.2px;
+      color: var(--accent-purple); font-weight: 700; margin: 16px 0 10px;
+    }
+    .detail-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 9px 11px; border-radius: 10px; margin-bottom: 7px;
+      background: rgba(255,255,255,0.03); font-size: 0.86rem;
+    }
+    .detail-item.done { background: rgba(52,211,153,0.08); }
+    .detail-item.missed { background: rgba(239,68,68,0.07); }
+    .detail-ico { flex-shrink: 0; font-size: 0.95rem; margin-top: 1px; }
+    .detail-item.done .detail-ico { color: var(--accent-emerald); }
+    .detail-item.missed .detail-ico { color: #f87171; }
+    .detail-text .d-label { font-weight: 600; color: var(--text-main); }
+    .detail-item.done .d-label { text-decoration: line-through; color: var(--text-muted); }
+    .detail-text .d-sub { display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* Diet tile option badge + meal option cards */
+    .custom-checkbox { cursor: pointer; touch-action: manipulation; }
+    .opt-badge {
+      flex-shrink: 0; font-size: 0.72rem; font-weight: 700;
+      color: var(--accent-blue); background: rgba(56,189,248,0.1);
+      border: 1px solid rgba(56,189,248,0.25); border-radius: 999px;
+      padding: 4px 10px; white-space: nowrap;
+    }
+    .opt-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 14px; margin-bottom: 12px;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      touch-action: manipulation;
+    }
+    .opt-card:hover { background: rgba(255,255,255,0.06); }
+    .opt-card:active { transform: scale(0.99); }
+    .opt-card.selected {
+      border-color: var(--accent-emerald);
+      background: rgba(52,211,153,0.1);
+      box-shadow: 0 0 0 1px var(--accent-emerald) inset;
+    }
+    .opt-check { font-size: 0.72rem; font-weight: 700; color: var(--accent-emerald); margin-left: 6px; }
+    .opt-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .opt-tag {
+      font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 999px;
+    }
+    .opt-tag.a { background: rgba(56,189,248,0.18); color: var(--accent-blue); }
+    .opt-tag.b { background: rgba(192,132,252,0.18); color: var(--accent-purple); }
+    .opt-tag.fixed { background: rgba(251,191,36,0.18); color: var(--accent-amber); }
+    .opt-macros { font-size: 0.76rem; font-weight: 700; color: var(--accent-emerald); }
+    .opt-name { font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 5px; }
+    .opt-grams { font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; }
+    .btn.meal-toggle { background: linear-gradient(135deg, var(--accent-blue), var(--accent-emerald)); }
+    .btn.meal-toggle.disabled, .btn.meal-toggle:disabled {
+      background: rgba(148,163,184,0.25); color: var(--text-muted);
+      cursor: not-allowed; box-shadow: none; transform: none;
+    }
+    .opt-badge.chosen { color: var(--accent-emerald); background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.3); }
+    .d-eaten { display: block; font-size: 0.75rem; color: var(--accent-emerald); margin-top: 3px; font-weight: 600; }
+
+    /* Toast notifications */
+    .toast-wrap {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; gap: 10px; z-index: 999;
+      align-items: center; pointer-events: none;
+    }
+    .toast {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-left: 3px solid var(--accent-emerald);
+      color: var(--text-main);
+      padding: 12px 18px; border-radius: 12px;
+      font-size: 0.88rem; font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      animation: toastIn 0.4s var(--ease-spring);
+    }
+    .toast.out { animation: toastOut 0.3s ease forwards; }
+    .toast .toast-ico { font-size: 1.1rem; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes toastOut { to { opacity: 0; transform: translateY(14px) scale(0.95); } }
+
+    /* Confetti */
+    .confetti-piece {
+      position: fixed; top: -12px; width: 9px; height: 14px;
+      z-index: 998; pointer-events: none; opacity: 0.95;
+      animation: confettiFall linear forwards;
+    }
+    @keyframes confettiFall {
+      to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ---------- Light theme ---------- */
+    body.light {
+      --bg-base: #eef2f8;
+      --card-bg: rgba(255,255,255,0.82);
+      --card-border: rgba(15,23,42,0.1);
+      --text-main: #0f172a;
+      --text-muted: #5b6b82;
+    }
+    body.light::before, body.light::after { opacity: 0.16; }
+    body.light .card { box-shadow: 0 10px 30px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.4); }
+    body.light .check-item,
+    body.light .macro-tile,
+    body.light .opt-card,
+    body.light .cal-tile,
+    body.light .summary-chip,
+    body.light .detail-item,
+    body.light .profile-card { background: rgba(15,23,42,0.04); }
+    body.light .check-item:hover,
+    body.light .opt-card:hover,
+    body.light .cal-tile:not(.blank):not(.future):hover,
+    body.light .profile-card:hover { background: rgba(15,23,42,0.08); }
+    body.light .item-label { color: var(--text-main); }
+    body.light .custom-checkbox,
+    body.light .metric-input input,
+    body.light .goal-field input { background: rgba(15,23,42,0.05); color: var(--text-main); }
+    body.light .modal-sheet,
+    body.light .profile-sheet { background: #ffffff; }
+    body.light .cal-arrow,
+    body.light .modal-close { background: rgba(15,23,42,0.06); }
+    body.light .cal-arrow:hover,
+    body.light .modal-close:hover { background: rgba(15,23,42,0.12); }
+    body.light .progress-ring .ring-bg { stroke: rgba(15,23,42,0.12); }
+    body.light .macro-bar { background: rgba(15,23,42,0.12); }
+    body.light .toast { background: rgba(255,255,255,0.95); color: var(--text-main); }
+  </style>
+</head>
+<body>
+
+<!-- PIN gate (shown first; nothing loads until the correct PIN is entered) -->
+<div class="modal-overlay pin-overlay" id="pin-gate">
+  <div class="pin-sheet">
+    <div class="pin-title">Enter PIN</div>
+    <div class="pin-sub">4-digit access code</div>
+    <input id="pin-input" class="pin-input" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••">
+    <div class="pin-error" id="pin-error"></div>
+    <button class="btn" style="width:100%;" onclick="checkPin()">Unlock</button>
+  </div>
+</div>
+
+<!-- Profile selection -->
+<div class="modal-overlay profile-overlay" id="profile-picker" onclick="dismissPicker(event)">
+  <div class="profile-sheet" onclick="event.stopPropagation()">
+    <div class="profile-sheet-title">Who's checking in?</div>
+    <div class="profile-sheet-sub">Pick a profile — each person's data is kept separate.</div>
+    <div class="profile-cards">
+      <button class="profile-card shas3" onclick="selectProfile('Shas3')">
+        <span class="profile-ava">S</span>
+        <span class="profile-card-name">Shas3</span>
+      </button>
+      <button class="profile-card muji" onclick="selectProfile('Muji')">
+        <span class="profile-ava">M</span>
+        <span class="profile-card-name">Muji</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <header>
+    <h1>6-Month Reversal Dashboard</h1>
+    <p>Individual Diet & Exercise Checklist • Instant Auto-Save</p>
+    <div class="header-row">
+      <button class="mini-btn" id="install-btn" style="display:none;" onclick="installApp()">⬇ Install</button>
+      <button class="mini-btn" id="rem-btn" onclick="toggleReminders()" title="Meal & water reminders">🔔 Off</button>
+      <button class="mini-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle light / dark">☀️</button>
+      <button class="profile-chip" onclick="showProfilePicker()" title="Change profile">
+        <span class="profile-ava" id="profile-ava-sm"></span><span id="profile-name">—</span> • Change profile
+      </button>
+      <div class="sync-status" id="sync-status"><span class="sync-dot"></span>Active & Saving Locally</div>
+    </div>
+  </header>
+
+  <!-- Today's Action Plan -->
+  <div class="card">
+    <div class="day-head">
+      <div class="day-head-text">
+        <div class="day-name" id="current-day-name">Loading Day...</div>
+        <div class="day-date" id="current-date-str"></div>
+      </div>
+      <div class="progress-ring">
+        <svg width="70" height="70">
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8"/>
+              <stop offset="100%" stop-color="#34d399"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-bg" cx="35" cy="35" r="30"></circle>
+          <circle class="ring-fill" id="ring-fill" cx="35" cy="35" r="30"
+            stroke-dasharray="188.5" stroke-dashoffset="188.5"></circle>
+        </svg>
+        <div class="ring-label" id="ring-label">0%</div>
+      </div>
+    </div>
+
+    <!-- Diet Plan Checklist -->
+    <div class="checklist-group">
+      <h3>Diet Plan Checklist</h3>
+      <div id="diet-checklist"></div>
+    </div>
+
+    <!-- Workout Plan Checklist -->
+    <div class="checklist-group">
+      <h3>Workout Plan Checklist</h3>
+      <div id="workout-checklist"></div>
+    </div>
+  </div>
+
+  <!-- Today's Nutrition (from chosen + completed meals) -->
+  <div class="card">
+    <div class="section-title">
+      <span>Today's Nutrition</span>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span id="macro-sub" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">0 meals logged</span>
+        <button class="mini-btn" onclick="openCustomMeal()">＋ Meal</button>
+        <button class="mini-btn" onclick="openGoals()">🎯 Goals</button>
+      </div>
+    </div>
+    <div class="macro-grid" id="macro-grid"></div>
+    <div class="custom-meals" id="custom-meals"></div>
+    <div class="macro-note">Totals add up as you mark meals done, using the Option A/B you picked. Fiber is estimated from each meal's ingredients.</div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Water Tracker -->
+    <div class="card water-tracker">
+      <div class="section-title">Hydration Tracker <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Target 3.5 L</span></div>
+      <div class="water-bubbles" id="water-container"></div>
+      <div class="water-count-big"><span id="water-count">0</span> / 14</div>
+      <div class="water-sub">glasses • <span id="water-liters">0</span> L</div>
+    </div>
+
+    <!-- Body Metrics -->
+    <div class="card">
+      <div class="section-title">Morning Weight <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Empty stomach</span></div>
+      <div class="today-weight empty" id="today-weight">Not logged yet this morning</div>
+      <div class="metric-input">
+        <input type="number" step="0.1" id="input-weight" placeholder="Weight (kg)">
+        <input type="number" step="0.1" id="input-fat" placeholder="Body Fat %">
+        <button class="btn" id="confirm-btn" onclick="confirmWeight()">Confirm</button>
+      </div>
+      <div class="metric-hint" id="metric-hint">Enter your weight, then press Confirm. It locks until tomorrow morning.</div>
+      <div id="history-container" style="margin-top: 15px; font-size: 0.85rem;"></div>
+    </div>
+  </div>
+
+  <!-- Progress Photos -->
+  <div class="card">
+    <div class="section-title">
+      <span>Progress Photos</span>
+      <span id="photo-sub" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">—</span>
+    </div>
+    <div class="photo-today" id="photo-today"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <label class="btn" for="photo-camera" style="display:inline-block;">📷 Take photo</label>
+      <label class="mini-btn" for="photo-gallery-input" style="display:inline-flex;align-items:center;">🖼️ Gallery</label>
+    </div>
+    <input type="file" id="photo-camera" accept="image/*" capture="environment" style="display:none" onchange="uploadPhoto(this)">
+    <input type="file" id="photo-gallery-input" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
+    <div class="photo-gallery" id="photo-gallery"></div>
+  </div>
+
+  <!-- Weight Trend -->
+  <div class="card">
+    <div class="section-title">
+      <span>Body Trend</span>
+      <div class="trend-toggle">
+        <button class="trend-tab active" id="tab-weight" onclick="setTrendMetric('weight')">Weight</button>
+        <button class="trend-tab" id="tab-fat" onclick="setTrendMetric('fat')">Body Fat %</button>
+      </div>
+    </div>
+    <div id="weight-trend"></div>
+    <div id="trend-sub" class="trend-sub-line">—</div>
+  </div>
+
+  <!-- Protein & Calories over time -->
+  <div class="card">
+    <div class="section-title">
+      <span>Protein & Calories</span>
+      <div class="trend-toggle">
+        <button class="trend-tab active" id="bar-tab-protein" onclick="setBarMetric('protein')">Protein</button>
+        <button class="trend-tab" id="bar-tab-cal" onclick="setBarMetric('calories')">Calories</button>
+      </div>
+    </div>
+    <div class="bars" id="macro-bars"></div>
+    <div class="bars-x" id="macro-bars-x"></div>
+    <div class="bars-foot" id="bars-foot">Last 14 days</div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="card">
+    <div class="section-title">
+      <span>Activity Calendar</span>
+      <div class="cal-nav">
+        <button class="cal-arrow" onclick="changeMonth(-1)" aria-label="Previous month">‹</button>
+        <span id="cal-month-label"></span>
+        <button class="cal-arrow" onclick="changeMonth(1)" aria-label="Next month">›</button>
+      </div>
+    </div>
+    <div class="cal-weekdays">
+      <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <span><i class="dot done"></i>All done</span>
+      <span><i class="dot partial"></i>Partial</span>
+      <span><i class="dot none"></i>Missed / none</span>
+      <span><i class="dot today-dot"></i>Today</span>
+    </div>
+  </div>
+
+  <!-- Adherence heatmap -->
+  <div class="card">
+    <div class="section-title">
+      <span>Adherence Heatmap</span>
+      <span id="hm-sub" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">—</span>
+    </div>
+    <div class="heatmap-wrap"><div class="heatmap" id="heatmap"></div></div>
+    <div class="hm-legend">Less
+      <span class="hm-cell"></span><span class="hm-cell l1"></span><span class="hm-cell l2"></span><span class="hm-cell l3"></span><span class="hm-cell l4"></span>
+      More</div>
+  </div>
+
+  <!-- Export -->
+  <div class="card">
+    <div class="section-title"><span>Export</span></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="btn" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="mini-btn" style="padding:11px 16px;" onclick="weeklyReport()">🧾 Weekly report (PDF)</button>
+    </div>
+    <div class="macro-note">CSV = full history for this profile. Weekly report opens a printable page — choose “Save as PDF”.</div>
+  </div>
+</div>
+
+<!-- Day detail modal -->
+<div class="modal-overlay" id="day-modal" onclick="closeDayModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <div class="modal-date" id="modal-date">—</div>
+        <div class="modal-day" id="modal-day"></div>
+      </div>
+      <button class="modal-close" onclick="closeDayModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-summary" id="modal-summary"></div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Meal options modal -->
+<div class="modal-overlay" id="meal-modal" onclick="closeMealModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <div class="modal-date" id="meal-title">Meal</div>
+        <div class="modal-day" id="meal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeMealModal()" aria-label="Close">✕</button>
+    </div>
+    <div id="meal-options"></div>
+    <button class="btn meal-toggle" id="meal-toggle-btn" style="width:100%;margin-top:6px;">Mark as done ✓</button>
+  </div>
+</div>
+
+<!-- Daily macro targets modal -->
+<div class="modal-overlay" id="goals-modal" onclick="closeGoals(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <div class="modal-date">Daily Targets</div>
+        <div class="modal-day">Goals for <span id="goals-profile"></span></div>
+      </div>
+      <button class="modal-close" onclick="closeGoals()" aria-label="Close">✕</button>
+    </div>
+    <div class="goal-field"><label>Calories (kcal)</label><input type="number" id="goal-kcal"></div>
+    <div class="goal-field"><label>Protein (g)</label><input type="number" id="goal-protein"></div>
+    <div class="goal-field"><label>Carbs (g)</label><input type="number" id="goal-carbs"></div>
+    <div class="goal-field"><label>Fat (g)</label><input type="number" id="goal-fat"></div>
+    <div class="goal-field"><label>Fiber (g)</label><input type="number" id="goal-fiber"></div>
+    <button class="btn" style="width:100%;margin-top:8px;" onclick="saveGoals()">Save targets</button>
+  </div>
+</div>
+
+<!-- Custom one-off meal modal -->
+<div class="modal-overlay" id="custom-modal" onclick="closeCustomMeal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <div class="modal-date">Add a meal</div>
+        <div class="modal-day">One-off entry for today</div>
+      </div>
+      <button class="modal-close" onclick="closeCustomMeal()" aria-label="Close">✕</button>
+    </div>
+    <div class="goal-field"><label>Name</label><input type="text" id="cm-name" placeholder="e.g. Protein bar" style="width:170px;"></div>
+    <div class="goal-field"><label>Calories (kcal)</label><input type="number" id="cm-kcal"></div>
+    <div class="goal-field"><label>Protein (g)</label><input type="number" id="cm-p"></div>
+    <div class="goal-field"><label>Carbs (g)</label><input type="number" id="cm-c"></div>
+    <div class="goal-field"><label>Fat (g)</label><input type="number" id="cm-f"></div>
+    <div class="goal-field"><label>Fiber (g)</label><input type="number" id="cm-fib"></div>
+    <button class="btn" style="width:100%;margin-top:8px;" onclick="saveCustomMeal()">Add meal</button>
+  </div>
+</div>
+
+<!-- Progress photo viewer -->
+<div class="modal-overlay" id="photo-modal" onclick="closePhoto(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div><div class="modal-date" id="photo-modal-date">Photo</div></div>
+      <button class="modal-close" onclick="closePhoto()" aria-label="Close">✕</button>
+    </div>
+    <img id="photo-modal-img" alt="Progress photo">
+    <button class="btn" style="width:100%;margin-top:12px;" id="photo-dl-btn">⬇ Download</button>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+  // OPTIONAL SUPABASE CONFIGURATION
+  // Replace these with your actual Supabase URL and anon key if you want cloud sync.
+  // Use ONLY the public "anon" / publishable key here — never the secret key (it is exposed to anyone viewing this page).
+  const SUPABASE_URL = "https://sksgiblvsbtvbajeolwa.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_WmC4C89z6071zjS1J_dVnQ_RweDNe6i";
+
+  // Master Plan Database
+  const masterPlan = {
+    0: {
+      dayName: "Sunday — Full Rest & Check-In",
+      diet: [
+        { id: "su_d1", label: "On Waking (08:00 AM)", sub: "Fasting scale check-in + hydration — tap for details", options: [
+          { tag: "Fixed", title: "Fasting Check-In & Soaked Nuts", grams: "Weigh-in (empty stomach) + 1 glass warm water + 4 soaked almonds + 2 walnuts", macros: "70 kcal • 2g P" }
+        ] },
+        { id: "su_d2", label: "Breakfast (09:00 AM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Pesarattu / Moong Dal Idlis", grams: "50g Green Gram batter (2 pesarattu or 3 idlis) + 150ml Sambar + 100g Greek Yogurt", macros: "340 kcal • 22g P • 44g C • 6g F" },
+          { tag: "B", title: "Greek Yogurt & Berry Oats Parfait", grams: "150g Greek Yogurt + 40g Oats + 10g Flaxseeds + fruit", macros: "360 kcal • 23g P • 42g C • 9g F" }
+        ] },
+        { id: "su_d3", label: "Lunch (01:30 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Ragi Roti & Paneer Bhurji", grams: "2 Ragi Rotis (50g flour) + 100g low-fat Paneer Bhurji + 100g Ridge Gourd (Heerekayi) Palya + 200ml Buttermilk", macros: "390 kcal • 24g P • 48g C • 12g F" },
+          { tag: "B", title: "Foxtail Millet & Chana Masala", grams: "40g dry Foxtail Millet cooked + 150g Chana Masala + 1 bowl Salad", macros: "395 kcal • 20g P • 58g C • 6g F (approx.)" }
+        ] },
+        { id: "su_d4", label: "Afternoon Shake (04:30 PM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Cosmix Plant Protein Shake", grams: "1 scoop Cosmix Plant Protein + 350ml cold water", macros: "120 kcal • 22g P • 2g C • 1g F" }
+        ] },
+        { id: "su_d5", label: "Dinner (08:00 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Clear Veg Soup & Sprouted Moong Chaat", grams: "1 bowl clear vegetable soup + 150g sprouted moong/chana chaat with lemon", macros: "280 kcal • 18g P • 32g C • 4g F (approx.)" },
+          { tag: "B", title: "Besan & Paneer Chilla", grams: "30g Besan + 100g grated low-fat Paneer + Mint Chutney", macros: "330 kcal • 24g P • 22g C • 13g F" }
+        ] }
+      ],
+      workout: [
+        { id: "su_w1", label: "Full Rest Day", sub: "No gym lifting. Focus on sleep & hydration.", yt: "https://www.youtube.com/results?search_query=importance+of+rest+days+muscle+growth" }
+      ]
+    },
+    1: {
+      dayName: "Monday — Upper Body Push",
+      diet: [
+        { id: "m_d1", label: "On Waking (07:00 AM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Hydration, Chia & Soaked Nuts", grams: "1 glass warm water + 5g chia seeds + 4 soaked almonds + 2 walnuts", macros: "85 kcal • 2.5g P" }
+        ] },
+        { id: "m_d2", label: "Breakfast (08:30 AM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Ragi-Oats Dosa with Sambar", grams: "20g Ragi flour + 20g True Elements Oats flour (2 small dosas) + 150ml Toor Dal Sambar + 2 tbsp Mint Chutney", macros: "310 kcal • 15g P • 48g C • 5g F" },
+          { tag: "B", title: "Greek Yogurt & Berry Oats Bowl", grams: "40g True Elements Rolled Oats + 150g Greek Yogurt + 10g flaxseeds + 50g pomegranate/blueberries", macros: "360 kcal • 23g P • 42g C • 9g F" }
+        ] },
+        { id: "m_d3", label: "Lunch (01:00 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Jowar Roti & Chana Masala", grams: "2 Jowar Rotis (50g flour) + 150g cooked Kala Chana curry + Cucumber-Tomato Salad + 200ml spiced Buttermilk", macros: "390 kcal • 18g P • 62g C • 6g F" },
+          { tag: "B", title: "Soya Chunk & Veggie Millet Biryani", grams: "35g dry Soya Chunks + 40g dry Little Millet (Samai) + 50g mixed veggies + 150g Cucumber Raita", macros: "385 kcal • 28g P • 50g C • 6g F" }
+        ] },
+        { id: "m_d4", label: "Pre-Workout Snack (04:30 PM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Cosmix Yeast Protein + Makhana", grams: "1 scoop Cosmix Yeast Protein (Mocha) + 350ml cold water + 10 roasted makhana", macros: "145 kcal • 23g P • 4g C • 2g F" }
+        ] },
+        { id: "m_d5", label: "Dinner (08:15 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Kadai Paneer Palya & Green Salad", grams: "150g low-fat Paneer sautéed in 1 tsp oil with capsicum, onion, mustard seeds, curry leaves & turmeric + large Green Salad", macros: "320 kcal • 28g P • 12g C • 16g F" },
+          { tag: "B", title: "Besan & Paneer Chilla", grams: "30g Besan flour + 100g grated low-fat Paneer stuffing + Mint Chutney", macros: "330 kcal • 24g P • 22g C • 13g F" }
+        ] }
+      ],
+      workout: [
+        { id: "m_w1", label: "Machine Chest Press", sub: "3 sets × 8–10 reps (25–35 kg)", yt: "https://www.youtube.com/results?search_query=machine+chest+press+proper+form" },
+        { id: "m_w2", label: "Incline Dumbbell Press (30°)", sub: "3 sets × 10–12 reps (7.5–10 kg each)", yt: "https://www.youtube.com/results?search_query=incline+dumbbell+press+30+degrees+form" },
+        { id: "m_w3", label: "Seated DB Overhead Press", sub: "3 sets × 10 reps (7.5–10 kg each)", yt: "https://www.youtube.com/results?search_query=seated+dumbbell+shoulder+press+tutorial" },
+        { id: "m_w4", label: "Dumbbell Lateral Raises", sub: "3 sets × 12–15 reps (4–5 kg each)", yt: "https://www.youtube.com/results?search_query=dumbbell+lateral+raise+form" },
+        { id: "m_w5", label: "Triceps Cable Pushdowns", sub: "3 sets × 12 reps (15–20 kg)", yt: "https://www.youtube.com/results?search_query=triceps+cable+pushdown+form" },
+        { id: "m_w6", label: "Post-Lift Cycle Cardio", sub: "15 minutes moderate resistance (70–80 RPM)", yt: "https://www.youtube.com/results?search_query=zone+2+cardio+cycling" }
+      ]
+    },
+    2: {
+      dayName: "Tuesday — Upper Body Pull",
+      diet: [
+        { id: "t_d1", label: "On Waking (07:00 AM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Warm Water, ACV & Almonds", grams: "1 glass warm water + 15ml Apple Cider Vinegar + 5 soaked almonds", macros: "40 kcal • 1.2g P" }
+        ] },
+        { id: "t_d2", label: "Breakfast (08:30 AM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Moong Dal Pesarattu", grams: "50g dry Green Gram / Moong Dal batter (2 pesarattu) + 150ml Sambar + 2 tbsp Tomato-Ginger Chutney", macros: "320 kcal • 18g P • 46g C • 5g F" },
+          { tag: "B", title: "Oats & Greek Yogurt Parfait", grams: "150g Greek Yogurt + 30g raw True Elements Oats + 10g Pumpkin seeds + 50g chopped Apple", macros: "335 kcal • 21g P • 38g C • 8g F" }
+        ] },
+        { id: "t_d3", label: "Lunch (01:00 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Foxtail Millet & Rajma Bowl", grams: "40g dry Foxtail Millet (Navane) cooked + 150g cooked Rajma curry + 100g Cabbage-Beans Palya + 100g Curd", macros: "410 kcal • 19g P • 65g C • 7g F" },
+          { tag: "B", title: "Paneer Bhurji & Multigrain Roti", grams: "120g low-fat Paneer scrambled with onion, capsicum & tomato + 1 Multigrain Roti (25g flour) + 1 glass Buttermilk", macros: "380 kcal • 26g P • 28g C • 15g F" }
+        ] },
+        { id: "t_d4", label: "Pre-Workout Snack (04:30 PM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Cosmix Plant Protein Shake", grams: "1 scoop Cosmix Plant Protein (Mocha) + 350ml cold water", macros: "120 kcal • 22g P • 2g C • 1g F" }
+        ] },
+        { id: "t_d5", label: "Dinner (08:15 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Sprouted Green Gram & Paneer Chaat", grams: "150g steamed Moong Sprouts + 50g Paneer cubes + chopped cucumber, tomato, lemon juice & chaat masala", macros: "290 kcal • 21g P • 30g C • 7g F" },
+          { tag: "B", title: "Soya Chunk Stir-Fry with Jowar Roti", grams: "40g dry Soya Chunks (boiled) + 100g Broccoli/Capsicum stir-fried in 1 tsp oil + 1 small Jowar Roti (25g flour)", macros: "310 kcal • 26g P • 32g C • 6g F" }
+        ] }
+      ],
+      workout: [
+        { id: "t_w1", label: "Lat Pulldowns (Wide Grip)", sub: "3 sets × 10–12 reps (30–40 kg)", yt: "https://www.youtube.com/results?search_query=lat+pulldown+proper+form" },
+        { id: "t_w2", label: "Seated Cable Rows (V-Grip)", sub: "3 sets × 10 reps (30–35 kg)", yt: "https://www.youtube.com/results?search_query=seated+cable+row+v+grip+form" },
+        { id: "t_w3", label: "Chest-Supported DB Rows", sub: "3 sets × 10–12 reps (10–12.5 kg each)", yt: "https://www.youtube.com/results?search_query=chest+supported+dumbbell+row" },
+        { id: "t_w4", label: "Cable Face Pulls", sub: "3 sets × 15 reps (15–17.5 kg)", yt: "https://www.youtube.com/results?search_query=cable+face+pulls+proper+form" },
+        { id: "t_w5", label: "Dumbbell Hammer Curls", sub: "3 sets × 12 reps (7.5–10 kg each)", yt: "https://www.youtube.com/results?search_query=dumbbell+hammer+curls+form" },
+        { id: "t_w6", label: "Post-Lift Incline Treadmill", sub: "15 minutes (6% Incline, 4.2 km/h)", yt: "https://www.youtube.com/results?search_query=incline+treadmill+walking+fat+loss" }
+      ]
+    },
+    3: {
+      dayName: "Wednesday — Core & Zone-2",
+      diet: [
+        { id: "w_d1", label: "On Waking (07:00 AM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Hydration & Soaked Nuts", grams: "1 glass warm water + 4 soaked almonds + 2 walnuts", macros: "70 kcal • 2g P" }
+        ] },
+        { id: "w_d2", label: "Breakfast (08:30 AM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "High-Protein Oats Upma", grams: "40g True Elements Rolled Oats + 30g Green Peas + 30g Carrots (mustard & curry leaves) + 100g Greek Yogurt on the side", macros: "325 kcal • 19g P • 45g C • 6g F" },
+          { tag: "B", title: "Moong Dal Idli with Sambar", grams: "3 Moong Dal Idlis (50g batter) + 1 bowl Sambar + 100g Greek Yogurt", macros: "340 kcal • 22g P • 44g C • 6g F" }
+        ] },
+        { id: "w_d3", label: "Lunch (01:00 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Ragi Roti & Moong Dal Tadka", grams: "2 Ragi Rotis (50g flour) + 150g cooked Yellow Moong Dal + 100g Lauki/Snake Gourd Palya + 200ml spiced Buttermilk", macros: "380 kcal • 17g P • 60g C • 5g F" },
+          { tag: "B", title: "Soya Chunk Curry & Little Millet", grams: "35g dry Soya Chunks in tomato-onion gravy + 40g dry Little Millet (Samai) cooked + 1 bowl Salad", macros: "395 kcal • 27g P • 52g C • 6g F" }
+        ] },
+        { id: "w_d4", label: "Pre-Workout Snack (04:30 PM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Cosmix Yeast Protein + Almonds", grams: "1 scoop Cosmix Yeast Protein + 350ml cold water + 4 soaked almonds", macros: "145 kcal • 23g P • 3g C • 3g F" }
+        ] },
+        { id: "w_d5", label: "Dinner (08:15 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Tofu / Paneer Tikka Salad", grams: "125g low-fat Paneer or Tofu marinated in curd, turmeric, chili & kasuri methi, pan-grilled + large Cucumber-Tomato Salad", macros: "280 kcal • 24g P • 10g C • 14g F" },
+          { tag: "B", title: "Besan & Paneer Chilla", grams: "30g Besan + 100g grated Paneer + Mint Chutney", macros: "330 kcal • 24g P • 22g C • 13g F" }
+        ] }
+      ],
+      workout: [
+        { id: "w_w1", label: "Standard Forearm Plank", sub: "3 sets × 30–45 second holds", yt: "https://www.youtube.com/results?search_query=forearm+plank+proper+form" },
+        { id: "w_w2", label: "Captain’s Chair Knee Raises", sub: "3 sets × 12–15 reps", yt: "https://www.youtube.com/results?search_query=captains+chair+knee+raise" },
+        { id: "w_w3", label: "Dead Bug / Bird-Dog", sub: "3 sets × 10 reps per side", yt: "https://www.youtube.com/results?search_query=dead+bug+exercise+form" },
+        { id: "w_w4", label: "Cable Woodchoppers", sub: "3 sets × 12 reps per side (7.5–10 kg)", yt: "https://www.youtube.com/results?search_query=cable+woodchoppers+form" },
+        { id: "w_w5", label: "Dedicated Zone-2 Walk", sub: "25 minutes Incline Treadmill (5–7% Incline, 4.2 km/h)", yt: "https://www.youtube.com/results?search_query=zone+2+treadmill+walking" }
+      ]
+    },
+    4: {
+      dayName: "Thursday (WFH) — Full Body & Posterior",
+      diet: [
+        { id: "th_d1", label: "On Waking (07:30 AM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Warm Water & Chia", grams: "1 glass warm water + 5g soaked chia seeds", macros: "20 kcal • 0.8g P" }
+        ] },
+        { id: "th_d2", label: "Breakfast (08:30 AM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Vegetable Appe with Sambar", grams: "60g fermented Oats-Ragi batter (6–8 appe) + 150ml Veg Sambar + 100g Greek Yogurt", macros: "330 kcal • 20g P • 46g C • 5g F" },
+          { tag: "B", title: "Oats & Greek Yogurt Bowl", grams: "40g True Elements Rolled Oats + 150g Greek Yogurt + 10g Flaxseeds + 50g Blueberries", macros: "360 kcal • 23g P • 42g C • 9g F" }
+        ] },
+        { id: "th_d3", label: "Lunch (01:30 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Foxtail Millet, Palak Dal & Bhindi Fry", grams: "40g dry Foxtail Millet cooked + 150g Spinach Dal + 100g Okra/Bhindi fry (minimal oil) + 100g Curd", macros: "400 kcal • 18g P • 61g C • 7g F" },
+          { tag: "B", title: "Black Chana Sundal & Jowar Roti", grams: "150g cooked Black Chana with mustard, curry leaves & 1 tbsp grated coconut + 1 Jowar Roti (25g flour) + 1 glass Buttermilk", macros: "385 kcal • 22g P • 54g C • 8g F" }
+        ] },
+        { id: "th_d4", label: "Pre-Workout Snack (04:15 PM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Cosmix Plant Protein Shake", grams: "1 scoop Cosmix Plant Protein + 350ml cold water", macros: "120 kcal • 22g P • 2g C • 1g F" }
+        ] },
+        { id: "th_d5", label: "Dinner (07:30 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Soya Chunk Stir-Fry with Jowar Roti", grams: "40g dry Soya Chunks (boiled) + 100g Broccoli, Capsicum & Onions + 1 small Jowar Roti (25g flour)", macros: "310 kcal • 26g P • 32g C • 6g F" },
+          { tag: "B", title: "Kadai Paneer & Green Salad", grams: "150g low-fat Paneer sautéed with capsicum/onions + green salad", macros: "320 kcal • 28g P • 12g C • 16g F" }
+        ] }
+      ],
+      workout: [
+        { id: "th_w1", label: "Dumbbell Romanian Deadlifts", sub: "3 sets × 10 reps (12.5–15 kg each)", yt: "https://www.youtube.com/results?search_query=dumbbell+romanian+deadlift+form" },
+        { id: "th_w2", label: "Pec Deck Chest Fly", sub: "3 sets × 12 reps (20–25 kg)", yt: "https://www.youtube.com/results?search_query=pec+deck+chest+fly+machine" },
+        { id: "th_w3", label: "Straight-Arm Lat Pulldown", sub: "3 sets × 12 reps (15–20 kg)", yt: "https://www.youtube.com/results?search_query=straight+arm+lat+pulldown" },
+        { id: "th_w4", label: "Dumbbell Shrugs", sub: "3 sets × 12–15 reps (15–17.5 kg each)", yt: "https://www.youtube.com/results?search_query=dumbbell+shrugs+form" },
+        { id: "th_w5", label: "Post-Lift Stair Stepper", sub: "15 minutes steady cadence", yt: "https://www.youtube.com/results?search_query=stair+master+workout+form" }
+      ]
+    },
+    5: {
+      dayName: "Friday (WFH) — Legs & Lower Body Power",
+      diet: [
+        { id: "f_d1", label: "On Waking (07:30 AM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Warm Water & Almonds", grams: "1 glass warm water + 4 soaked almonds", macros: "30 kcal • 1g P" }
+        ] },
+        { id: "f_d2", label: "Breakfast (08:30 AM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Moong Dal Pesarattu", grams: "50g Green Gram batter (2 pesarattu) + 150ml Sambar + 2 tbsp Mint Chutney", macros: "320 kcal • 18g P • 46g C • 5g F" },
+          { tag: "B", title: "Oats Upma with Greek Yogurt", grams: "40g True Elements Oats + veggies + 100g Greek Yogurt on the side", macros: "325 kcal • 19g P • 45g C • 6g F" }
+        ] },
+        { id: "f_d3", label: "Lunch (01:30 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Multigrain Roti & Black Chana Curry", grams: "2 Multigrain Rotis (50g flour) + 150g cooked Kala Chana curry + 100g Capsicum Palya + 200ml Buttermilk", macros: "395 kcal • 19g P • 63g C • 6g F" },
+          { tag: "B", title: "Soya Chunk Biryani with Raita", grams: "35g dry Soya Chunks + 40g dry Little Millet + veggies + 150g Cucumber Raita", macros: "385 kcal • 28g P • 50g C • 6g F" }
+        ] },
+        { id: "f_d4", label: "Pre-Workout Snack (04:15 PM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Cosmix Yeast Protein Shake", grams: "1 scoop Cosmix Yeast Protein + 350ml cold water", macros: "120 kcal • 22g P • 2g C • 1g F" }
+        ] },
+        { id: "f_d5", label: "Dinner (07:30 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Grilled Paneer Tikka Salad", grams: "125g low-fat Paneer pan-grilled with spices + 1 large bowl Green Salad", macros: "280 kcal • 24g P • 10g C • 14g F" },
+          { tag: "B", title: "Steamed Sprouted Moong & Paneer Chaat", grams: "150g Moong Sprouts + 50g Paneer cubes + cucumber, tomato & lemon", macros: "290 kcal • 21g P • 30g C • 7g F" }
+        ] }
+      ],
+      workout: [
+        { id: "f_w1", label: "45° Incline Leg Press", sub: "3 sets × 10–12 reps (Sled + 40–60 kg)", yt: "https://www.youtube.com/results?search_query=incline+leg+press+proper+form" },
+        { id: "f_w2", label: "Dumbbell Goblet Squats", sub: "3 sets × 10 reps (12.5–15 kg)", yt: "https://www.youtube.com/results?search_query=dumbbell+goblet+squat+form" },
+        { id: "f_w3", label: "Seated/Lying Leg Curls", sub: "3 sets × 12 reps (25–35 kg)", yt: "https://www.youtube.com/results?search_query=seated+leg+curl+machine" },
+        { id: "f_w4", label: "Seated Leg Extensions", sub: "3 sets × 12–15 reps (25–30 kg)", yt: "https://www.youtube.com/results?search_query=leg+extension+machine+proper+form" },
+        { id: "f_w5", label: "Calf Raises", sub: "3 sets × 15 reps (20–30 kg)", yt: "https://www.youtube.com/results?search_query=standing+calf+raises+form" },
+        { id: "f_w6", label: "Cool-Down Flat Walk", sub: "15 minutes slow walk (4.0 km/h)", yt: "https://www.youtube.com/results?search_query=post+workout+cool+down+walk" }
+      ]
+    },
+    6: {
+      dayName: "Saturday — Active Recovery",
+      diet: [
+        { id: "s_d1", label: "On Waking (08:00 AM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Warm Water & Chia", grams: "1 glass warm water + 5g chia seeds", macros: "20 kcal • 0.8g P" }
+        ] },
+        { id: "s_d2", label: "Breakfast (09:00 AM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Savory Oats Khichdi", grams: "40g True Elements Rolled Oats + 20g Yellow Moong Dal cooked with ginger, turmeric & cumin + 100g Greek Yogurt", macros: "340 kcal • 20g P • 48g C • 5g F" },
+          { tag: "B", title: "Ragi-Oats Dosa with Sambar", grams: "20g Ragi flour + 20g Oats flour (2 small dosas) + 150ml Sambar", macros: "310 kcal • 15g P • 48g C • 5g F" }
+        ] },
+        { id: "s_d3", label: "Lunch (01:30 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Little Millet Biryani with Raita", grams: "40g dry Little Millet (Samai) + 30g Soya Chunks + mixed veggies + 150g Cucumber Raita", macros: "380 kcal • 26g P • 52g C • 6g F" },
+          { tag: "B", title: "Jowar Roti & Rajma Curry", grams: "2 Jowar Rotis (50g flour) + 150g Rajma curry + 100g Curd + Salad", macros: "410 kcal • 19g P • 64g C • 6g F" }
+        ] },
+        { id: "s_d4", label: "Afternoon Snack (04:30 PM)", sub: "Fixed routine — tap for details", options: [
+          { tag: "Fixed", title: "Cosmix Plant Protein Shake", grams: "1 scoop Cosmix Plant Protein + 350ml cold water", macros: "120 kcal • 22g P • 2g C • 1g F" }
+        ] },
+        { id: "s_d5", label: "Dinner (08:00 PM)", sub: "2 options — tap to choose (A / B)", options: [
+          { tag: "A", title: "Oats-Besan Dosa & Mixed Dal", grams: "20g Oats flour + 20g Besan batter (2 small dosas) + 150g cooked Mixed Dal + Green Salad", macros: "320 kcal • 18g P • 46g C • 6g F" },
+          { tag: "B", title: "Kadai Paneer & Green Salad", grams: "150g low-fat Paneer sautéed with capsicum/onions + green salad", macros: "320 kcal • 28g P • 12g C • 16g F" }
+        ] }
+      ],
+      workout: [
+        { id: "s_w1", label: "Outdoor Brisk Walk", sub: "30–40 minute evening walk (Target: 7,500–8,000 steps)", yt: "https://www.youtube.com/results?search_query=brisk+walking+benefits+fat+loss" }
+      ]
+    }
+  };
+
+  const today = new Date();
+  const dayIndex = today.getDay();
+  const toKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const dateKey = toKey(today);
+
+  // Profiles — all data is scoped per selected person. Not remembered across refreshes.
+  const PROFILES = ['Shas3', 'Muji'];
+  let profile = null;
+  const sKey = (base, key) => `${base}_${profile}_${key}`;   // profile + date scoped
+  const metricsKey = () => `metrics_${profile}`;
+
+  let completedItems = [];
+  let waterGlasses = 0;
+  let mealChoices = {};
+  let customMeals = [];
+  let currentWeight = null;
+  let currentFat = null;
+  let currentPhoto = null;
+  const STORAGE_BUCKET = 'progress-photos';
+  const DEFAULT_GOALS = { kcal: 1300, protein: 95, carbs: 180, fat: 45, fiber: 30 };
+  let goals = Object.assign({}, DEFAULT_GOALS);
+
+  function loadLocalForToday() {
+    completedItems = JSON.parse(localStorage.getItem(sKey('items', dateKey))) || [];
+    waterGlasses = parseInt(localStorage.getItem(sKey('water', dateKey))) || 0;
+    mealChoices = JSON.parse(localStorage.getItem(sKey('choices', dateKey))) || {};
+    customMeals = JSON.parse(localStorage.getItem(sKey('custom', dateKey))) || [];
+    currentPhoto = localStorage.getItem(sKey('photo', dateKey)) || null;
+    goals = Object.assign({}, DEFAULT_GOALS, JSON.parse(localStorage.getItem(`goals_${profile}`)) || {});
+  }
+
+  // In-memory copy of all DB rows (date → row). Source of truth for the calendar when online.
+  let dbCache = {};
+  let dbReady = false;
+
+  // UI feedback helpers
+  function setStatus(text, color) {
+    const el = document.getElementById("sync-status");
+    el.innerHTML = `<span class="sync-dot"></span>${text}`;
+    if (color) { el.style.color = color; el.querySelector('.sync-dot').style.background = color; }
+  }
+
+  function toast(message, icon = '✓', color = 'var(--accent-emerald)') {
+    const wrap = document.getElementById("toast-wrap");
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.style.borderLeftColor = color;
+    t.innerHTML = `<span class="toast-ico">${icon}</span><span>${message}</span>`;
+    wrap.appendChild(t);
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 1800);
+  }
+
+  function updateProgress() {
+    const plan = masterPlan[dayIndex] || masterPlan[1];
+    const total = plan.diet.length + plan.workout.length;
+    const done = plan.diet.concat(plan.workout).filter(i => completedItems.includes(i.id)).length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    const circ = 188.5;
+    const ring = document.getElementById("ring-fill");
+    if (ring) ring.style.strokeDashoffset = circ - (circ * pct / 100);
+    const label = document.getElementById("ring-label");
+    if (label) label.innerText = pct + '%';
+    return pct;
+  }
+
+  function celebrate() {
+    const colors = ['#38bdf8', '#34d399', '#c084fc', '#fbbf24', '#f472b6'];
+    for (let i = 0; i < 60; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+      piece.style.animationDelay = Math.random() * 0.4 + 's';
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 4000);
+    }
+  }
+
+  function initApp() {
+    const currentPlan = masterPlan[dayIndex] || masterPlan[1];
+    document.getElementById("current-day-name").innerText = currentPlan.dayName;
+    document.getElementById("current-date-str").innerText = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    // Render immediately
+    renderUI();
+    restoreTodayWeight();
+    setupWeightAutoSave();
+    renderCalendar();
+
+    // Background REST call to Supabase if credentials are provided
+    if (SUPABASE_URL.startsWith("https://")) {
+      // Fetch this profile's full history so the calendar reflects every device.
+      fetch(`${SUPABASE_URL}/rest/v1/daily_logs?profile=eq.${encodeURIComponent(profile)}&select=*`, {
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(rows => {
+        dbCache = {};
+        rows.forEach(r => { dbCache[r.date] = r; });
+        dbReady = true;
+
+        const todayRow = dbCache[dateKey];
+        if (todayRow) {
+          completedItems = todayRow.completed_items || completedItems;
+          waterGlasses = todayRow.water_glasses || waterGlasses;
+          mealChoices = todayRow.meal_choices || mealChoices;
+          customMeals = todayRow.custom_meals || customMeals;
+          currentWeight = todayRow.weight != null ? todayRow.weight : currentWeight;
+          currentFat = todayRow.body_fat != null ? todayRow.body_fat : currentFat;
+          currentPhoto = todayRow.photo || currentPhoto;
+          renderUI();
+          restoreTodayWeight();
+        }
+        renderCalendar();
+        renderWeightTrend();
+        renderMacroBars();
+        renderHeatmap();
+        renderPhotos();
+        setStatus("Connected to database ✓", 'var(--accent-blue)');
+        lastSyncMode = 'cloud';
+      })
+      .catch(() => {
+        setStatus("Offline — saving locally", 'var(--accent-amber)');
+      });
+    }
+  }
+
+  function syncData() {
+    localStorage.setItem(sKey('items', dateKey), JSON.stringify(completedItems));
+    localStorage.setItem(sKey('water', dateKey), waterGlasses);
+    localStorage.setItem(sKey('choices', dateKey), JSON.stringify(mealChoices));
+    localStorage.setItem(sKey('custom', dateKey), JSON.stringify(customMeals));
+    if (currentPhoto) localStorage.setItem(sKey('photo', dateKey), currentPhoto);
+
+    // Keep the in-memory DB cache in step so the calendar updates instantly.
+    dbCache[dateKey] = {
+      profile: profile,
+      date: dateKey,
+      completed_items: completedItems.slice(),
+      water_glasses: waterGlasses,
+      meal_choices: Object.assign({}, mealChoices),
+      custom_meals: customMeals.slice(),
+      weight: currentWeight,
+      body_fat: currentFat,
+      photo: currentPhoto
+    };
+    renderCalendar();
+
+    if (SUPABASE_URL.startsWith("https://")) {
+      // on_conflict=profile,date → upsert merges onto this person's day row instead of erroring.
+      fetch(`${SUPABASE_URL}/rest/v1/daily_logs?on_conflict=profile,date`, {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          "Prefer": "resolution=merge-duplicates,return=minimal"
+        },
+        body: JSON.stringify({
+          profile: profile,
+          date: dateKey,
+          completed_items: completedItems,
+          water_glasses: waterGlasses,
+          meal_choices: mealChoices,
+          custom_meals: customMeals,
+          weight: currentWeight,
+          body_fat: currentFat,
+          photo: currentPhoto
+        })
+      })
+      .then(res => {
+        if (res.ok) markSync('cloud');
+        else markSync('local', `Cloud rejected (HTTP ${res.status}) — saved locally`);
+      })
+      .catch(() => markSync('local', "No connection — saved locally only"));
+    } else {
+      markSync('offline');
+    }
+  }
+
+  // Tracks whether the last write reached the DB; only toasts on a state change.
+  let lastSyncMode = null;
+  function markSync(mode, failMsg) {
+    if (mode === 'cloud') {
+      setStatus("Saved to database ✓", 'var(--accent-blue)');
+      if (lastSyncMode !== 'cloud') toast("Row saved to database", '☁️', 'var(--accent-blue)');
+    } else if (mode === 'local') {
+      setStatus("Saved locally (cloud failed)", 'var(--accent-amber)');
+      if (lastSyncMode !== 'local') toast(failMsg || "Saved locally only", '⚠️', 'var(--accent-amber)');
+    } else {
+      setStatus("Active & Saving Locally");
+    }
+    lastSyncMode = mode;
+  }
+
+  function renderUI() {
+    const plan = masterPlan[dayIndex] || masterPlan[1];
+
+    // Render Diet Checklist
+    document.getElementById("diet-checklist").innerHTML = plan.diet.map(item => {
+      const isDone = completedItems.includes(item.id);
+      const chosen = isDone ? mealChoices[item.id] : null;   // show pick only once committed
+      const multi = item.options && item.options.length > 1;
+      const badge = chosen && multi ? ('Option ' + chosen) : (multi ? 'A / B' : 'Info');
+      return `
+      <div class="check-item ${isDone ? 'completed' : ''}" onclick="openMealModal('${item.id}')">
+        <div class="check-left">
+          <div class="custom-checkbox" onclick="event.stopPropagation(); toggleItem('${item.id}')"></div>
+          <div>
+            <span class="item-label">${item.label}</span>
+            <span class="item-sub">${item.sub}</span>
+          </div>
+        </div>
+        <span class="opt-badge ${chosen && multi ? 'chosen' : ''}">${badge} ›</span>
+      </div>`;
+    }).join('');
+
+    // Render Workout Checklist
+    document.getElementById("workout-checklist").innerHTML = plan.workout.map(item => `
+      <div class="check-item ${completedItems.includes(item.id) ? 'completed' : ''}">
+        <div class="check-left" onclick="toggleItem('${item.id}')">
+          <div class="custom-checkbox"></div>
+          <div>
+            <span class="item-label">${item.label}</span>
+            <span class="item-sub">${item.sub}</span>
+          </div>
+        </div>
+        <a href="${item.yt}" target="_blank" class="yt-btn" onclick="event.stopPropagation()">
+          ▶ Demo Video
+        </a>
+      </div>
+    `).join('');
+
+    renderWater();
+    renderMetricsHistory();
+    updateProgress();
+    renderMacros();
+    renderCustomMeals();
+    renderWeightTrend();
+    renderMacroBars();
+    renderHeatmap();
+    renderPhotos();
+  }
+
+  // Pull kcal / protein / carbs / fat out of a macros string like "310 kcal • 15g P • 48g C • 5g F".
+  function parseMacros(s) {
+    const num = re => { const m = s.match(re); return m ? parseFloat(m[1]) : 0; };
+    return {
+      kcal: num(/([\d.]+)\s*kcal/i),
+      p: num(/([\d.]+)\s*g\s*P/i),
+      c: num(/([\d.]+)\s*g\s*C/i),
+      f: num(/([\d.]+)\s*g\s*F/i)
+    };
+  }
+
+  // Estimate dietary fiber (g) from a meal's ingredient text — the dataset doesn't list fiber.
+  function estimateFiber(grams) {
+    const s = (grams || '').toLowerCase();
+    let fib = 0;
+    const add = (re, g) => { if (re.test(s)) fib += g; };
+    add(/oats/, 4);
+    add(/ragi/, 2);
+    add(/jowar|multigrain|\broti\b/, 2);
+    add(/foxtail|little millet|samai|millet/, 3);
+    add(/chana|rajma/, 7);
+    add(/moong dal|toor dal|palak dal|spinach dal|mixed dal|\bdal\b|sambar/, 4);
+    add(/soya/, 4);
+    add(/sprout|green gram|pesarattu|idli/, 5);
+    add(/besan/, 3);
+    add(/chia/, 2);
+    add(/almond|walnut|flax|pumpkin seed/, 2);
+    add(/berr|blueber|pomegranate|apple|fruit/, 2);
+    add(/salad|veggie|capsicum|cabbage|beans|bhindi|okra|lauki|broccoli|spinach|palak|ridge gourd|snake gourd/, 3);
+    add(/upma|khichdi|appe|dosa/, 2);
+    return fib;
+  }
+
+  // Sum macros from completed meals of a plan, using the chosen A/B option per meal.
+  function computeMacros(plan, completed, choices, custom) {
+    let kcal = 0, p = 0, c = 0, f = 0, fib = 0, meals = 0;
+    plan.diet.forEach(item => {
+      if (!completed.includes(item.id) || !item.options) return;
+      const tag = (choices && choices[item.id]) || (item.options.length === 1 ? item.options[0].tag : null);
+      const opt = item.options.find(o => o.tag === tag) || (item.options.length === 1 ? item.options[0] : null);
+      if (!opt) return;
+      const m = parseMacros(opt.macros);
+      kcal += m.kcal; p += m.p; c += m.c; f += m.f; fib += estimateFiber(opt.grams); meals++;
+    });
+    (custom || []).forEach(cm => {
+      kcal += +cm.kcal || 0; p += +cm.p || 0; c += +cm.c || 0; f += +cm.f || 0; fib += +cm.fib || 0; meals++;
+    });
+    return { kcal, p, c, f, fib, meals };
+  }
+
+  // Sum macros from meals marked done today, using the chosen A/B option.
+  function renderMacros() {
+    const plan = masterPlan[dayIndex] || masterPlan[1];
+    const sum = computeMacros(plan, completedItems, mealChoices, customMeals);
+    const r1 = x => Math.round(x * 10) / 10;
+    const tiles = [
+      { label: 'Calories', val: Math.round(sum.kcal), unit: 'kcal', cls: 'cal', goal: goals.kcal },
+      { label: 'Protein', val: r1(sum.p), unit: 'g', cls: 'pro', goal: goals.protein },
+      { label: 'Carbs', val: r1(sum.c), unit: 'g', cls: 'carb', goal: goals.carbs },
+      { label: 'Fat', val: r1(sum.f), unit: 'g', cls: 'fat', goal: goals.fat },
+      { label: 'Fiber', val: r1(sum.fib), unit: 'g', cls: 'fib', goal: goals.fiber }
+    ];
+    document.getElementById("macro-grid").innerHTML = tiles.map(t => {
+      const hasGoal = t.goal > 0 && typeof t.val === 'number';
+      const pct = hasGoal ? Math.min(100, Math.round(t.val / t.goal * 100)) : 0;
+      const hit = hasGoal && t.val >= t.goal;
+      const foot = hasGoal
+        ? `<div class="macro-goal">of ${t.goal}${t.unit}</div><div class="macro-bar"><span style="width:${pct}%"></span></div>`
+        : `<div class="macro-goal">not tracked</div>`;
+      return `
+        <div class="macro-tile ${t.cls} ${hit ? 'hit' : ''}">
+          <div class="macro-val">${t.val}<span class="macro-unit">${t.unit}</span></div>
+          <div class="macro-label">${t.label}</div>
+          ${foot}
+        </div>`;
+    }).join('');
+    document.getElementById("macro-sub").innerText = sum.meals + (sum.meals === 1 ? ' meal logged' : ' meals logged');
+  }
+
+  /* ---------- Daily macro targets ---------- */
+  function openGoals() {
+    document.getElementById("goals-profile").innerText = profile;
+    document.getElementById("goal-kcal").value = goals.kcal;
+    document.getElementById("goal-protein").value = goals.protein;
+    document.getElementById("goal-carbs").value = goals.carbs;
+    document.getElementById("goal-fat").value = goals.fat;
+    document.getElementById("goal-fiber").value = goals.fiber;
+    document.getElementById("goals-modal").classList.add("open");
+  }
+
+  function closeGoals(event) {
+    if (event && event.target !== document.getElementById("goals-modal")) return;
+    document.getElementById("goals-modal").classList.remove("open");
+  }
+
+  function saveGoals() {
+    goals = {
+      kcal: parseFloat(document.getElementById("goal-kcal").value) || 0,
+      protein: parseFloat(document.getElementById("goal-protein").value) || 0,
+      carbs: parseFloat(document.getElementById("goal-carbs").value) || 0,
+      fat: parseFloat(document.getElementById("goal-fat").value) || 0,
+      fiber: parseFloat(document.getElementById("goal-fiber").value) || 0
+    };
+    localStorage.setItem(`goals_${profile}`, JSON.stringify(goals));
+    closeGoals();
+    renderMacros();
+    toast("Daily targets saved", '🎯', 'var(--accent-blue)');
+  }
+
+  /* ---------- Custom one-off meals ---------- */
+  function renderCustomMeals() {
+    const el = document.getElementById("custom-meals");
+    if (!el) return;
+    el.innerHTML = customMeals.map(cm => `
+      <div class="cm-item">
+        <div>
+          <strong>${cm.name}</strong>
+          <div class="cm-macros">${Math.round(cm.kcal || 0)} kcal • ${cm.p || 0}P · ${cm.c || 0}C · ${cm.f || 0}F${cm.fib ? ' · ' + cm.fib + 'Fib' : ''}</div>
+        </div>
+        <button class="cm-remove" onclick="removeCustomMeal('${cm.id}')" aria-label="Remove">✕</button>
+      </div>`).join('');
+  }
+
+  function openCustomMeal() {
+    ['cm-name', 'cm-kcal', 'cm-p', 'cm-c', 'cm-f', 'cm-fib'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById("custom-modal").classList.add("open");
+  }
+
+  function closeCustomMeal(event) {
+    if (event && event.target !== document.getElementById("custom-modal")) return;
+    document.getElementById("custom-modal").classList.remove("open");
+  }
+
+  function saveCustomMeal() {
+    const name = (document.getElementById("cm-name").value || 'Custom meal').replace(/[`'"<>]/g, '').slice(0, 40);
+    const num = id => parseFloat(document.getElementById(id).value) || 0;
+    const kcal = num('cm-kcal'), p = num('cm-p'), c = num('cm-c'), f = num('cm-f'), fib = num('cm-fib');
+    if (!kcal && !p && !c && !f && !fib) { toast("Enter at least one value", '⚠️', 'var(--accent-amber)'); return; }
+    customMeals.push({ id: 'cm_' + Date.now(), name, kcal, p, c, f, fib });
+    syncData();
+    renderUI();
+    closeCustomMeal();
+    toast("Meal added • " + Math.round(kcal) + " kcal", '🍽️');
+  }
+
+  function removeCustomMeal(id) {
+    customMeals = customMeals.filter(m => m.id !== id);
+    syncData();
+    renderUI();
+    toast("Meal removed", '↩️', 'var(--accent-amber)');
+  }
+
+  function toggleItem(id) {
+    const plan = masterPlan[dayIndex] || masterPlan[1];
+    const dietItem = plan.diet.find(d => d.id === id);
+    const wasComplete = completedItems.includes(id);
+
+    // Diet items must have an option selected before they can be marked done.
+    if (!wasComplete && dietItem && dietItem.options) {
+      if (dietItem.options.length === 1) {
+        mealChoices[id] = dietItem.options[0].tag;   // auto-select fixed meals
+      } else if (!mealChoices[id]) {
+        openMealModal(id);
+        toast("Pick what you ate (A or B) first", '🍽️', 'var(--accent-amber)');
+        return;
+      }
+    }
+
+    if (wasComplete) {
+      completedItems = completedItems.filter(i => i !== id);
+    } else {
+      completedItems.push(id);
+    }
+    renderUI();
+    syncData();
+    const pct = updateProgress();
+    if (!wasComplete) {
+      if (pct === 100) { toast("Day complete! Amazing work 🎉", '🏆', 'var(--accent-amber)'); celebrate(); }
+      else { toast("Task done • " + pct + "% today"); }
+    } else {
+      toast("Task unchecked • " + pct + "% today", '↩️', 'var(--accent-amber)');
+    }
+  }
+
+  function renderWater() {
+    const container = document.getElementById("water-container");
+    container.innerHTML = '';
+    for (let i = 0; i < 14; i++) {
+      const glass = document.createElement('div');
+      glass.className = `glass ${i < waterGlasses ? 'filled' : ''}`;
+      glass.onclick = () => {
+        const prev = waterGlasses;
+        waterGlasses = (i + 1 === waterGlasses) ? i : i + 1;
+        renderWater();
+        syncData();
+        if (waterGlasses > prev) {
+          if (waterGlasses === 14) toast("Hydration goal reached! 💧", '💧', 'var(--accent-blue)');
+          else toast((waterGlasses * 0.25).toFixed(2) + " L logged", '💧', 'var(--accent-blue)');
+        }
+      };
+      container.appendChild(glass);
+    }
+    document.getElementById("water-count").innerText = waterGlasses;
+    document.getElementById("water-liters").innerText = (waterGlasses * 0.25).toFixed(2);
+  }
+
+  let weightLocked = false;
+
+  // Confirm locks today's morning weight until tomorrow.
+  function confirmWeight() {
+    if (weightLocked) return;
+    const weightVal = document.getElementById("input-weight").value;
+    const fatVal = document.getElementById("input-fat").value;
+    if (!weightVal) { toast("Enter a weight first", '⚠️', 'var(--accent-amber)'); return; }
+
+    currentWeight = parseFloat(weightVal);
+    currentFat = fatVal ? parseFloat(fatVal) : null;
+
+    // Keep one record per day: replace today's entry if it already exists.
+    let history = JSON.parse(localStorage.getItem(metricsKey())) || [];
+    history = history.filter(h => h.date !== dateKey);
+    history.unshift({ date: dateKey, weight: currentWeight, fat: currentFat });
+    localStorage.setItem(metricsKey(), JSON.stringify(history));
+
+    syncData();
+    renderTodayWeight();
+    renderMetricsHistory();
+    lockWeight();
+    toast("Morning weight confirmed • " + currentWeight + " kg", '⚖️');
+  }
+
+  function lockWeight() {
+    weightLocked = true;
+    document.getElementById("input-weight").disabled = true;
+    document.getElementById("input-fat").disabled = true;
+    const btn = document.getElementById("confirm-btn");
+    if (btn) { btn.disabled = true; btn.classList.add('locked'); btn.innerText = '🔒 Locked'; }
+    const hint = document.getElementById("metric-hint");
+    if (hint) hint.innerText = '🔒 Locked for today — opens again tomorrow morning.';
+  }
+
+  function renderTodayWeight() {
+    const el = document.getElementById("today-weight");
+    if (!el) return;
+    if (currentWeight != null) {
+      el.classList.remove('empty');
+      el.innerText = currentWeight + ' kg' + (currentFat != null ? ' • ' + currentFat + '% fat' : '');
+    } else {
+      el.classList.add('empty');
+      el.innerText = 'Not logged yet this morning';
+    }
+  }
+
+  // Prefill today's inputs/display from the most recent local record for today.
+  function restoreTodayWeight() {
+    const history = JSON.parse(localStorage.getItem(metricsKey())) || [];
+    const todayRec = history.find(h => h.date === dateKey);
+    if (todayRec) {
+      currentWeight = todayRec.weight;
+      currentFat = todayRec.fat != null ? todayRec.fat : currentFat;
+    }
+    if (currentWeight != null) document.getElementById("input-weight").value = currentWeight;
+    if (currentFat != null) document.getElementById("input-fat").value = currentFat;
+    renderTodayWeight();
+    // Already confirmed earlier today → keep it locked until tomorrow.
+    if (todayRec) lockWeight();
+  }
+
+  // Press Enter in either field to confirm (same as the Confirm button).
+  function setupWeightAutoSave() {
+    ["input-weight", "input-fat"].forEach(id => {
+      document.getElementById(id)
+        .addEventListener("keydown", e => { if (e.key === "Enter") confirmWeight(); });
+    });
+  }
+
+  function renderMetricsHistory() {
+    const container = document.getElementById("history-container");
+    const history = JSON.parse(localStorage.getItem(metricsKey())) || [];
+
+    if (history.length === 0) {
+      container.innerHTML = '<p style="color:var(--text-muted);">No entries yet. Log your weight above.</p>';
+      return;
+    }
+
+    container.innerHTML = history.slice(0, 5).map(item => `
+      <div class="history-item">
+        <span>${item.date}</span>
+        <strong>${item.weight} kg ${item.fat ? ' / ' + item.fat + '% Fat' : ''}</strong>
+      </div>
+    `).join('');
+  }
+
+  /* ---------- Body trend sparkline (weight / body fat) ---------- */
+  let trendMetric = 'weight';
+
+  function setTrendMetric(m) {
+    trendMetric = m;
+    document.getElementById("tab-weight").classList.toggle('active', m === 'weight');
+    document.getElementById("tab-fat").classList.toggle('active', m === 'fat');
+    renderWeightTrend();
+  }
+
+  // metric: 'weight' → kg, 'fat' → body fat %.
+  function getTrendSeries(metric) {
+    const dbField = metric === 'fat' ? 'body_fat' : 'weight';
+    const localField = metric === 'fat' ? 'fat' : 'weight';
+    const series = [];
+    if (dbReady) {
+      Object.values(dbCache).forEach(r => { if (r[dbField] != null) series.push({ date: r.date, val: +r[dbField] }); });
+    } else {
+      (JSON.parse(localStorage.getItem(metricsKey())) || []).forEach(h => {
+        if (h[localField] != null) series.push({ date: h.date, val: +h[localField] });
+      });
+    }
+    series.sort((a, b) => a.date < b.date ? -1 : 1);
+    return series;
+  }
+
+  function renderWeightTrend() {
+    const el = document.getElementById("weight-trend");
+    if (!el) return;
+    const sub = document.getElementById("trend-sub");
+    const unit = trendMetric === 'fat' ? '%' : 'kg';
+    const noun = trendMetric === 'fat' ? 'body fat' : 'weight';
+    const series = getTrendSeries(trendMetric);
+
+    if (series.length === 0) {
+      el.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;">Log your morning ${noun} to start the trend.</p>`;
+      if (sub) sub.innerText = '—';
+      return;
+    }
+
+    const W = 320, H = 90, pad = 14, n = series.length;
+    const vals = series.map(s => s.val);
+    let min = Math.min(...vals), max = Math.max(...vals);
+    if (min === max) { min -= 1; max += 1; }
+    const xAt = i => n === 1 ? W / 2 : pad + i * (W - 2 * pad) / (n - 1);
+    const yAt = v => H - pad - (v - min) / (max - min) * (H - 2 * pad);
+    const pts = series.map((s, i) => [xAt(i), yAt(s.val)]);
+
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    const area = `M${pts[0][0].toFixed(1)} ${(H - pad).toFixed(1)} `
+      + pts.map(p => 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ')
+      + ` L${pts[n - 1][0].toFixed(1)} ${(H - pad).toFixed(1)} Z`;
+    const stroke = trendMetric === 'fat' ? '#c084fc' : '#38bdf8';
+    const dots = pts.map((p, i) =>
+      `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i === n - 1 ? 3.5 : 2.2}" fill="${i === n - 1 ? '#34d399' : stroke}"/>`).join('');
+
+    el.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${noun} trend">
+        <defs><linearGradient id="wtGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${stroke}" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="${stroke}" stop-opacity="0"/>
+        </linearGradient></defs>
+        <path d="${area}" fill="url(#wtGrad)"/>
+        <path d="${line}" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        ${dots}
+      </svg>
+      <div class="trend-foot">
+        <span class="trend-range">Range ${min.toFixed(1)}–${max.toFixed(1)} ${unit}</span>
+        <span class="trend-latest">${series[n - 1].val.toFixed(1)} ${unit}</span>
+      </div>`;
+
+    if (sub) {
+      const delta = Math.round((series[n - 1].val - series[0].val) * 10) / 10;
+      const arrow = delta < 0 ? '▼' : delta > 0 ? '▲' : '■';
+      const col = delta < 0 ? 'var(--accent-emerald)' : delta > 0 ? '#f87171' : 'var(--text-muted)';
+      sub.innerHTML = `<span style="color:${col}">${arrow} ${Math.abs(delta)} ${unit}</span> since start • ${n} entr${n === 1 ? 'y' : 'ies'}`;
+    }
+  }
+
+  /* ---------- Protein & calories bar chart (last 14 days) ---------- */
+  let barMetric = 'protein';
+
+  function setBarMetric(m) {
+    barMetric = m;
+    document.getElementById("bar-tab-protein").classList.toggle('active', m === 'protein');
+    document.getElementById("bar-tab-cal").classList.toggle('active', m === 'calories');
+    renderMacroBars();
+  }
+
+  function renderMacroBars() {
+    const el = document.getElementById("macro-bars");
+    if (!el) return;
+    const N = 14;
+    const goal = barMetric === 'protein' ? goals.protein : goals.kcal;
+
+    const rows = [];
+    for (let i = N - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const key = toKey(d);
+      const data = getDayData(key);
+      const m = computeMacros(data.plan, data.completed, data.choices, data.custom);
+      rows.push({ day: d.getDate(), key, val: barMetric === 'protein' ? m.p : m.kcal, isToday: key === dateKey });
+    }
+
+    const maxVal = Math.max(goal || 0, ...rows.map(r => r.val), 1);
+    const goalPct = goal ? Math.min(100, goal / maxVal * 100) : 0;
+    const colorCls = barMetric === 'protein' ? '' : 'cal';
+
+    const goalLine = goal ? `<div class="goal-line" style="bottom:${goalPct}%"><span>goal ${goal}${barMetric === 'protein' ? 'g' : ''}</span></div>` : '';
+    el.innerHTML = goalLine + rows.map(r => {
+      const h = Math.round(r.val / maxVal * 100);
+      const title = `${r.key}: ${barMetric === 'protein' ? (Math.round(r.val * 10) / 10) + 'g protein' : Math.round(r.val) + ' kcal'}`;
+      return `<div class="bar-col ${r.isToday ? 'today' : ''}" title="${title}"><div class="bar ${colorCls}" style="height:${h}%"></div></div>`;
+    }).join('');
+
+    document.getElementById("macro-bars-x").innerHTML =
+      rows.map(r => `<span class="${r.isToday ? 'today' : ''}">${r.day}</span>`).join('');
+    document.getElementById("bars-foot").innerText =
+      `Last ${N} days • ${barMetric === 'protein' ? 'protein (g)' : 'calories (kcal)'} per day`;
+  }
+
+  /* ---------- Adherence heatmap (GitHub-style, ~6 months) ---------- */
+  function renderHeatmap() {
+    const el = document.getElementById("heatmap");
+    if (!el) return;
+    const WEEKS = 26;
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const start = new Date(todayStart);
+    start.setDate(start.getDate() - start.getDay() - (WEEKS - 1) * 7);   // Sunday of the first week
+
+    let html = '', active = 0, full = 0;
+    for (let i = 0; i < WEEKS * 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const key = toKey(d);
+      if (d > todayStart) { html += `<div class="hm-cell future"></div>`; continue; }
+
+      const data = getDayData(key);
+      const pct = data.total ? data.done / data.total : 0;
+      let lvl = 0;
+      if (pct >= 1) lvl = 4; else if (pct >= 0.67) lvl = 3; else if (pct >= 0.34) lvl = 2; else if (pct > 0) lvl = 1;
+      if (pct > 0) active++;
+      if (pct >= 1) full++;
+      html += `<div class="hm-cell ${lvl ? 'l' + lvl : ''} ${key === dateKey ? 'today' : ''}" title="${key}: ${data.done}/${data.total} tasks" onclick="openDayModal('${key}')"></div>`;
+    }
+    el.innerHTML = html;
+    const sub = document.getElementById("hm-sub");
+    if (sub) sub.innerText = `${full} full days • ${active} active`;
+  }
+
+  /* ---------- Progress photos (Supabase Storage) ---------- */
+  function compressImage(file, maxW = 1080, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const scale = Math.min(1, maxW / img.width);
+        const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('compress failed')), 'image/jpeg', quality);
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  async function uploadPhoto(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (!SUPABASE_URL.startsWith('https://')) { toast("Cloud not configured", '⚠️', 'var(--accent-amber)'); return; }
+    toast("Uploading photo…", '📷', 'var(--accent-blue)');
+    try {
+      const blob = await compressImage(file);
+      const path = `${encodeURIComponent(profile)}/${dateKey}.jpg`;
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'image/jpeg',
+          'x-upsert': 'true'
+        },
+        body: blob
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      currentPhoto = `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}?t=${Date.now()}`;
+      localStorage.setItem(sKey('photo', dateKey), currentPhoto);
+      syncData();
+      renderPhotos();
+      toast("Photo saved ✓", '📷');
+    } catch (e) {
+      toast("Upload failed — check bucket & policies", '⚠️', 'var(--accent-amber)');
+    }
+  }
+
+  function renderPhotos() {
+    const todayEl = document.getElementById("photo-today");
+    const gal = document.getElementById("photo-gallery");
+    const sub = document.getElementById("photo-sub");
+
+    if (todayEl) {
+      todayEl.innerHTML = currentPhoto
+        ? `<img src="${currentPhoto}" class="photo-thumb-lg" onclick="openPhoto('${currentPhoto}','${dateKey}')">`
+        : `<div class="photo-empty">No photo for today yet. Tap below to add one.</div>`;
+    }
+
+    let items = [];
+    if (dbReady) {
+      Object.values(dbCache).forEach(r => { if (r.photo) items.push({ date: r.date, url: r.photo }); });
+    } else if (currentPhoto) {
+      items.push({ date: dateKey, url: currentPhoto });
+    }
+    items.sort((a, b) => a.date < b.date ? 1 : -1);
+
+    if (gal) {
+      gal.innerHTML = items.map(it => `
+        <div class="photo-cell" onclick="openPhoto('${it.url}','${it.date}')">
+          <img src="${it.url}" loading="lazy" alt="${it.date}">
+          <span class="photo-date">${it.date}</span>
+        </div>`).join('');
+    }
+    if (sub) sub.innerText = items.length ? `${items.length} photo${items.length === 1 ? '' : 's'}` : '—';
+  }
+
+  function openPhoto(url, date) {
+    document.getElementById("photo-modal-img").src = url;
+    document.getElementById("photo-modal-date").innerText = date;
+    document.getElementById("photo-dl-btn").onclick = () => downloadPhoto(url, `progress_${profile}_${date}.jpg`);
+    document.getElementById("photo-modal").classList.add("open");
+  }
+
+  function closePhoto(event) {
+    if (event && event.target !== document.getElementById("photo-modal")) return;
+    document.getElementById("photo-modal").classList.remove("open");
+  }
+
+  function downloadPhoto(url, name) {
+    fetch(url).then(r => r.blob()).then(b => {
+      const u = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = u; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(u);
+    }).catch(() => window.open(url, '_blank'));
+  }
+
+  /* ---------- Export: CSV + weekly report ---------- */
+  function getLoggedDates() {
+    if (dbReady) return Object.keys(dbCache).sort();
+    const dates = [];
+    for (let i = 0; i < 180; i++) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      const key = toKey(d);
+      if (getDayData(key).hasActivity) dates.push(key);
+    }
+    return dates.sort();
+  }
+
+  function downloadBlob(content, type, name) {
+    const blob = new Blob([content], { type });
+    const u = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = u; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(u);
+  }
+
+  function exportCSV() {
+    const dates = getLoggedDates();
+    if (!dates.length) { toast("No data to export yet", '⚠️', 'var(--accent-amber)'); return; }
+    const r1 = x => Math.round(x * 10) / 10;
+    const headers = ['profile', 'date', 'day', 'tasks_done', 'tasks_total', 'adherence_%', 'water_glasses', 'water_liters', 'weight_kg', 'body_fat_%', 'calories', 'protein_g', 'carbs_g', 'fat_g', 'fiber_g'];
+    const rows = dates.map(key => {
+      const data = getDayData(key);
+      const mac = computeMacros(data.plan, data.completed, data.choices, data.custom);
+      const adh = data.total ? Math.round(data.done / data.total * 100) : 0;
+      return [
+        profile, key, '"' + data.plan.dayName + '"', data.done, data.total, adh,
+        data.water, (data.water * 0.25).toFixed(2),
+        data.rec ? data.rec.weight : '', (data.rec && data.rec.fat != null) ? data.rec.fat : '',
+        Math.round(mac.kcal), r1(mac.p), r1(mac.c), r1(mac.f), r1(mac.fib)
+      ].join(',');
+    });
+    downloadBlob([headers.join(','), ...rows].join('\n'), 'text/csv', `history_${profile}_${dateKey}.csv`);
+    toast("CSV downloaded", '⬇', 'var(--accent-blue)');
+  }
+
+  // NOTE: the report HTML intentionally omits the closing body/html tags and any inline
+  // script — VS Code Live Server injects its reload script before the closing body tag, which
+  // would corrupt this source file if that literal string appeared here.
+  function weeklyReport() {
+    const days = [];
+    for (let i = 6; i >= 0; i--) { const d = new Date(today); d.setDate(today.getDate() - i); days.push(toKey(d)); }
+    const r1 = x => Math.round(x * 10) / 10;
+    let totP = 0, totK = 0, waterSum = 0, fullDays = 0, cnt = 0;
+    const rowsHtml = days.map(key => {
+      const data = getDayData(key);
+      const mac = computeMacros(data.plan, data.completed, data.choices, data.custom);
+      const adh = data.total ? Math.round(data.done / data.total * 100) : 0;
+      totP += mac.p; totK += mac.kcal; waterSum += data.water; if (adh === 100) fullDays++; cnt++;
+      return `<tr><td>${key}</td><td>${data.done}/${data.total} (${adh}%)</td><td>${data.water}/14</td><td>${data.rec ? data.rec.weight + ' kg' : '-'}</td><td>${Math.round(mac.kcal)}</td><td>${r1(mac.p)} g</td></tr>`;
+    }).join('');
+    const avgP = Math.round(totP / cnt), avgK = Math.round(totK / cnt);
+
+    const style = 'body{font-family:Arial,Helvetica,sans-serif;padding:28px;color:#0f172a}'
+      + 'h1{margin:0 0 4px;font-size:22px}.muted{color:#64748b;font-size:13px}'
+      + '.cards{display:flex;gap:12px;margin:18px 0}.c{flex:1;border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center}'
+      + '.c b{font-size:22px;color:#0ea5e9}.c span{color:#64748b;font-size:12px}'
+      + 'table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #e2e8f0;padding:8px;text-align:left;font-size:13px}th{background:#f1f5f9}';
+
+    const html = '<!doctype html><html><head><meta charset="utf-8"><title>Weekly Report - ' + profile + '</title>'
+      + '<style>' + style + '</style></head><body>'
+      + '<h1>Weekly Progress Report</h1>'
+      + '<div class="muted">' + profile + ' &bull; ' + days[0] + ' to ' + days[6] + '</div>'
+      + '<div class="cards">'
+      + '<div class="c"><b>' + fullDays + '/7</b><br><span>full days</span></div>'
+      + '<div class="c"><b>' + avgP + ' g</b><br><span>avg protein</span></div>'
+      + '<div class="c"><b>' + avgK + '</b><br><span>avg kcal</span></div>'
+      + '<div class="c"><b>' + (waterSum / cnt * 0.25).toFixed(1) + ' L</b><br><span>avg water</span></div>'
+      + '</div>'
+      + '<table><thead><tr><th>Date</th><th>Tasks</th><th>Water</th><th>Weight</th><th>Calories</th><th>Protein</th></tr></thead><tbody>'
+      + rowsHtml + '</tbody></table>'
+      + '<p class="muted" style="margin-top:22px">Generated ' + new Date().toLocaleString() + ' &bull; Print to Save as PDF</p>';
+
+    const w = window.open('', '_blank');
+    if (!w) { toast("Allow pop-ups to export the report", '⚠️', 'var(--accent-amber)'); return; }
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { try { w.print(); } catch (e) {} }, 400);
+  }
+
+  /* ---------- Activity Calendar ---------- */
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  let calYear = today.getFullYear();
+  let calMonth = today.getMonth();
+
+  // Gather a day's completion data, preferring the DB cache and falling back to localStorage.
+  function getDayData(key) {
+    const d = new Date(key + "T00:00:00");
+    const plan = masterPlan[d.getDay()] || masterPlan[1];
+
+    const row = dbCache[key];
+    let completed, water, rec, choices, photo, custom;
+    if (dbReady && row) {
+      completed = row.completed_items || [];
+      water = row.water_glasses || 0;
+      choices = row.meal_choices || {};
+      custom = row.custom_meals || [];
+      photo = row.photo || null;
+      rec = row.weight != null ? { date: key, weight: row.weight, fat: row.body_fat } : null;
+    } else {
+      completed = JSON.parse(localStorage.getItem(sKey('items', key))) || [];
+      water = parseInt(localStorage.getItem(sKey('water', key))) || 0;
+      choices = JSON.parse(localStorage.getItem(sKey('choices', key))) || {};
+      custom = JSON.parse(localStorage.getItem(sKey('custom', key))) || [];
+      photo = localStorage.getItem(sKey('photo', key)) || null;
+      rec = (JSON.parse(localStorage.getItem(metricsKey())) || []).find(h => h.date === key) || null;
+    }
+
+    const all = plan.diet.concat(plan.workout);
+    const done = all.filter(i => completed.includes(i.id)).length;
+    const total = all.length;
+    const hasActivity = completed.length > 0 || water > 0 || !!rec || custom.length > 0;
+    return { plan, completed, water, rec, choices, photo, custom, done, total, hasActivity };
+  }
+
+  function changeMonth(delta) {
+    calMonth += delta;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    else if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const grid = document.getElementById("cal-grid");
+    if (!grid) return;
+    document.getElementById("cal-month-label").innerText = `${MONTHS[calMonth]} ${calYear}`;
+
+    const firstWeekday = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    let html = "";
+    for (let i = 0; i < firstWeekday; i++) html += `<div class="cal-tile blank"></div>`;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateObj = new Date(calYear, calMonth, day);
+      const key = toKey(dateObj);
+      const isToday = key === dateKey;
+      const isFuture = dateObj > todayStart;
+
+      if (isFuture) {
+        html += `<div class="cal-tile future">${day}</div>`;
+        continue;
+      }
+
+      const data = getDayData(key);
+      let statusClass = "", dotClass = "none";
+      if (data.total > 0 && data.done === data.total) { statusClass = "done"; dotClass = "done"; }
+      else if (data.hasActivity && data.done > 0) { statusClass = "partial"; dotClass = "partial"; }
+      else { dotClass = "none"; }
+
+      html += `
+        <div class="cal-tile ${statusClass} ${isToday ? 'today' : ''}" onclick="openDayModal('${key}')">
+          ${day}
+          <span class="tile-dot ${dotClass}"></span>
+        </div>`;
+    }
+    grid.innerHTML = html;
+  }
+
+  function openDayModal(key) {
+    const data = getDayData(key);
+    const d = new Date(key + "T00:00:00");
+    document.getElementById("modal-date").innerText =
+      d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById("modal-day").innerText = data.plan.dayName;
+
+    const waterL = (data.water * 0.25).toFixed(2);
+    const mac = computeMacros(data.plan, data.completed, data.choices, data.custom);
+    const r1 = x => Math.round(x * 10) / 10;
+    document.getElementById("modal-summary").innerHTML = `
+      <span class="summary-chip">✅ ${data.done}/${data.total} tasks</span>
+      <span class="summary-chip">💧 ${data.water}/14 • ${waterL} L</span>
+      <span class="summary-chip">⚖️ ${data.rec ? data.rec.weight + ' kg' : 'No weight'}</span>`;
+
+    const renderList = (items, isDiet) => items.map(item => {
+      const isDone = data.completed.includes(item.id);
+      const choice = isDiet ? data.choices[item.id] : null;
+      let eaten = '';
+      if (isDiet && choice && item.options) {
+        const opt = item.options.find(o => o.tag === choice);
+        if (opt) eaten = `<span class="d-eaten">🍽️ ${opt.tag === 'Fixed' ? '' : 'Option ' + opt.tag + ' — '}${opt.title}</span>`;
+      }
+      return `
+        <div class="detail-item ${isDone ? 'done' : 'missed'}">
+          <span class="detail-ico">${isDone ? '✓' : '✗'}</span>
+          <span class="detail-text">
+            <span class="d-label">${item.label}</span>
+            <span class="d-sub">${item.sub}</span>
+            ${eaten}
+          </span>
+        </div>`;
+    }).join('');
+
+    document.getElementById("modal-body").innerHTML = `
+      ${data.photo ? `<img src="${data.photo}" class="photo-thumb-lg" style="margin-bottom:16px;" onclick="openPhoto('${data.photo}','${key}')">` : ''}
+      <div class="modal-section-title">Today's Nutrition <span style="color:var(--text-muted);font-weight:600;text-transform:none;letter-spacing:0;">${mac.meals} meal${mac.meals === 1 ? '' : 's'}</span></div>
+      <div class="macro-grid">
+        <div class="macro-tile cal"><div class="macro-val">${Math.round(mac.kcal)}<span class="macro-unit">kcal</span></div><div class="macro-label">Calories</div></div>
+        <div class="macro-tile pro"><div class="macro-val">${r1(mac.p)}<span class="macro-unit">g</span></div><div class="macro-label">Protein</div></div>
+        <div class="macro-tile carb"><div class="macro-val">${r1(mac.c)}<span class="macro-unit">g</span></div><div class="macro-label">Carbs</div></div>
+        <div class="macro-tile fat"><div class="macro-val">${r1(mac.f)}<span class="macro-unit">g</span></div><div class="macro-label">Fat</div></div>
+        <div class="macro-tile fib"><div class="macro-val">${r1(mac.fib)}<span class="macro-unit">g</span></div><div class="macro-label">Fiber</div></div>
+      </div>
+      <div class="modal-section-title">Diet Plan</div>
+      ${renderList(data.plan.diet, true)}
+      <div class="modal-section-title">Workout Plan</div>
+      ${renderList(data.plan.workout, false)}`;
+
+    document.getElementById("day-modal").classList.add("open");
+  }
+
+  function closeDayModal(event) {
+    if (event && event.target !== document.getElementById("day-modal")) return;
+    document.getElementById("day-modal").classList.remove("open");
+  }
+
+  // Show Option A / B (with grams & macros) for a tapped diet tile.
+  let mealModalId = null;
+  let pendingChoice = null;   // tentative selection, committed only on "Mark as done"
+  function openMealModal(id) {
+    const plan = masterPlan[dayIndex] || masterPlan[1];
+    const item = plan.diet.find(d => d.id === id);
+    if (!item || !item.options) return;
+
+    mealModalId = id;
+    const single = item.options.length === 1;
+    const isDone = completedItems.includes(id);
+    // Pre-select only if already completed; otherwise start blank (fixed meals pre-pick their one option).
+    pendingChoice = (isDone ? mealChoices[id] : null) || (single ? item.options[0].tag : null);
+    document.getElementById("meal-title").innerText = item.label;
+    renderMealModal(id);
+    document.getElementById("meal-modal").classList.add("open");
+  }
+
+  function renderMealModal(id) {
+    const plan = masterPlan[dayIndex] || masterPlan[1];
+    const item = plan.diet.find(d => d.id === id);
+    const isDone = completedItems.includes(id);
+    const chosen = pendingChoice;
+
+    document.getElementById("meal-sub").innerText = isDone
+      ? "✓ Marked done"
+      : (chosen ? "Selected — tap ‘Mark as done’ to save" : "Select what you ate, then mark it done");
+
+    document.getElementById("meal-options").innerHTML = item.options.map(o => {
+      const cls = o.tag === 'A' ? 'a' : o.tag === 'B' ? 'b' : 'fixed';
+      const heading = o.tag === 'Fixed' ? 'Fixed' : 'Option ' + o.tag;
+      const selected = chosen === o.tag;
+      return `
+        <div class="opt-card ${selected ? 'selected' : ''}" onclick="selectMealOption('${id}','${o.tag}')">
+          <div class="opt-head">
+            <span class="opt-tag ${cls}">${heading}</span>
+            <span class="opt-macros">${o.macros}</span>
+          </div>
+          <div class="opt-name">${o.title} ${selected ? '<span class="opt-check">✓ eaten</span>' : ''}</div>
+          <div class="opt-grams">${o.grams}</div>
+        </div>`;
+    }).join('');
+
+    const btn = document.getElementById("meal-toggle-btn");
+    if (isDone) {
+      btn.disabled = false;
+      btn.classList.remove('disabled');
+      btn.innerText = "Mark as not done ↩";
+    } else if (chosen) {
+      btn.disabled = false;
+      btn.classList.remove('disabled');
+      btn.innerText = "Mark as done ✓";
+    } else {
+      btn.disabled = true;
+      btn.classList.add('disabled');
+      btn.innerText = "Select an option first";
+    }
+    btn.onclick = () => { commitMeal(id); };
+  }
+
+  // Hold the selection in memory only — nothing is saved until "Mark as done".
+  function selectMealOption(id, tag) {
+    pendingChoice = tag;
+    renderMealModal(id);
+  }
+
+  // Commit (or clear) the choice and toggle done state, then persist.
+  function commitMeal(id) {
+    const isDone = completedItems.includes(id);
+    if (isDone) {
+      delete mealChoices[id];
+    } else {
+      if (!pendingChoice) return;
+      mealChoices[id] = pendingChoice;
+    }
+    toggleItem(id);
+    closeMealModal();
+  }
+
+  function closeMealModal(event) {
+    if (event && event.target !== document.getElementById("meal-modal")) return;
+    document.getElementById("meal-modal").classList.remove("open");
+    pendingChoice = null;   // discard any uncommitted selection
+  }
+
+  /* ---------- Profiles ---------- */
+  function showProfilePicker() {
+    document.getElementById("profile-picker").classList.add("open");
+  }
+
+  // Close the picker only after a profile already exists (switch flow); first load must choose.
+  function dismissPicker(event) {
+    if (!profile) return;
+    if (event.target !== document.getElementById("profile-picker")) return;
+    document.getElementById("profile-picker").classList.remove("open");
+  }
+
+  function selectProfile(name) {
+    profile = name;
+    // Reset per-profile runtime state so switching is clean (no reload).
+    dbCache = {};
+    dbReady = false;
+    lastSyncMode = null;
+    weightLocked = false;
+    const w = document.getElementById("input-weight");
+    const f = document.getElementById("input-fat");
+    const b = document.getElementById("confirm-btn");
+    if (w) { w.disabled = false; w.value = ''; }
+    if (f) { f.disabled = false; f.value = ''; }
+    if (b) { b.disabled = false; b.classList.remove('locked'); b.innerText = 'Confirm'; }
+    const hint = document.getElementById("metric-hint");
+    if (hint) hint.innerText = 'Enter your weight, then press Confirm. It locks until tomorrow morning.';
+    startApp();
+  }
+
+  function startApp() {
+    document.getElementById("profile-picker").classList.remove("open");
+    document.getElementById("profile-name").innerText = profile;
+    document.getElementById("profile-ava-sm").innerText = profile.charAt(0);
+    loadLocalForToday();
+    initApp();
+    initReminders();
+  }
+
+  /* ---------- Theme ---------- */
+  function applyTheme(t) {
+    document.body.classList.toggle('light', t === 'light');
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.innerText = t === 'light' ? '🌙' : '☀️';
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', t === 'light' ? '#eef2f8' : '#0b1120');
+  }
+  function toggleTheme() {
+    const next = document.body.classList.contains('light') ? 'dark' : 'light';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  }
+  applyTheme(localStorage.getItem('theme') || 'dark');
+
+  /* ---------- Meal & water reminders (in-page notifications) ---------- */
+  let remindersOn = false;
+  let reminderTimer = null;
+  const firedReminders = new Set();
+
+  function reminderSchedule() {
+    const plan = masterPlan[dayIndex] || masterPlan[1];
+    const list = [];
+    plan.diet.forEach(item => {
+      const m = item.label.match(/\((\d{1,2}):(\d{2})\s*(AM|PM)\)/i);
+      if (m) {
+        let h = (+m[1]) % 12;
+        if (/pm/i.test(m[3])) h += 12;
+        list.push({ time: String(h).padStart(2, '0') + ':' + m[2], msg: item.label.replace(/\s*\(.*\)/, '') });
+      }
+    });
+    ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00'].forEach(t => list.push({ time: t, msg: 'Time to drink water 💧' }));
+    return list;
+  }
+
+  function checkReminders() {
+    if (!remindersOn || !('Notification' in window) || Notification.permission !== 'granted') return;
+    const now = new Date();
+    const hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    reminderSchedule().forEach(r => {
+      if (r.time !== hhmm) return;
+      const key = dateKey + '_' + r.time + '_' + r.msg;
+      if (firedReminders.has(key)) return;
+      firedReminders.add(key);
+      try { new Notification('Reversal' + (profile ? ' — ' + profile : ''), { body: r.msg, icon: 'icon.svg', tag: key }); } catch (e) {}
+    });
+  }
+
+  function startReminderTimer() {
+    if (reminderTimer) clearInterval(reminderTimer);
+    reminderTimer = setInterval(checkReminders, 30000);
+  }
+
+  function updateReminderBtn() {
+    const b = document.getElementById('rem-btn');
+    if (!b) return;
+    b.innerText = remindersOn ? '🔔 On' : '🔔 Off';
+    b.classList.toggle('on', remindersOn);
+  }
+
+  function toggleReminders() {
+    if (remindersOn) {
+      remindersOn = false;
+      localStorage.setItem('reminders', '0');
+      if (reminderTimer) clearInterval(reminderTimer);
+      updateReminderBtn();
+      toast("Reminders off", '🔔', 'var(--accent-amber)');
+      return;
+    }
+    if (!('Notification' in window)) { toast("Notifications not supported here", '⚠️', 'var(--accent-amber)'); return; }
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') {
+        remindersOn = true;
+        localStorage.setItem('reminders', '1');
+        updateReminderBtn();
+        startReminderTimer();
+        toast("Reminders on — keep this tab/app open", '🔔');
+        try { new Notification('Reversal', { body: "Meal & water reminders enabled ✓", icon: 'icon.svg' }); } catch (e) {}
+      } else {
+        toast("Allow notifications to enable reminders", '⚠️', 'var(--accent-amber)');
+      }
+    });
+  }
+
+  function initReminders() {
+    remindersOn = localStorage.getItem('reminders') === '1' && ('Notification' in window) && Notification.permission === 'granted';
+    updateReminderBtn();
+    if (remindersOn) startReminderTimer();
+  }
+
+  /* ---------- PWA: offline + install ---------- */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const b = document.getElementById('install-btn');
+    if (b) b.style.display = 'inline-flex';
+  });
+  function installApp() {
+    if (!deferredPrompt) {
+      toast("Use your browser menu → ‘Add to Home screen’", 'ℹ️', 'var(--accent-blue)');
+      return;
+    }
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.finally(() => {
+      deferredPrompt = null;
+      const b = document.getElementById('install-btn');
+      if (b) b.style.display = 'none';
+    });
+  }
+  window.addEventListener('appinstalled', () => {
+    const b = document.getElementById('install-btn');
+    if (b) b.style.display = 'none';
+  });
+
+  /* ---------- PIN gate ---------- */
+  const APP_PIN = "7483";   
+
+  function checkPin() {
+    const inp = document.getElementById('pin-input');
+    if (inp.value === APP_PIN) {
+      document.getElementById('pin-gate').classList.remove('open');
+      inp.value = '';
+      showProfilePicker();
+    } else {
+      document.getElementById('pin-error').innerText = 'Wrong PIN, try again';
+      inp.value = '';
+      inp.classList.add('shake');
+      setTimeout(() => inp.classList.remove('shake'), 400);
+      inp.focus();
+    }
+  }
+
+  // Boot: require the PIN first, then the profile picker.
+  (function () {
+    const gate = document.getElementById('pin-gate');
+    const inp = document.getElementById('pin-input');
+    gate.classList.add('open');
+    setTimeout(() => inp.focus(), 100);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
+    inp.addEventListener('input', () => {
+      document.getElementById('pin-error').innerText = '';
+      if (inp.value.length === 4) checkPin();   // auto-submit at 4 digits
+    });
+  })();
+
+</script>
+
+</body>
+</html>

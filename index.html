@@ -1277,9 +1277,10 @@
   }
 
   function updateProgress() {
+    const diet = dietForDay(dateKey, profile);
     const plan = masterPlan[dayIndex] || masterPlan[1];
-    const total = plan.diet.length + plan.workout.length;
-    const done = plan.diet.concat(plan.workout).filter(i => completedItems.includes(i.id)).length;
+    const total = diet.length + plan.workout.length;
+    const done = diet.concat(plan.workout).filter(i => completedItems.includes(i.id)).length;
     const pct = total ? Math.round((done / total) * 100) : 0;
     const circ = 188.5;
     const ring = document.getElementById("ring-fill");
@@ -1287,6 +1288,23 @@
     const label = document.getElementById("ring-label");
     if (label) label.innerText = pct + '%';
     return pct;
+  }
+
+  /* ---------- Tablet reminder (Shas3 only, every 2 days from Oct 10) ---------- */
+  const TABLET_START = '2026-10-10';
+  const TABLET_ITEM = { id: 'tablet', label: 'Take Tablet 💊', sub: 'Medication — once every 2 days', simple: true };
+  function tabletApplies(key, prof) {
+    if (prof !== 'Shas3') return false;
+    const start = new Date(TABLET_START + 'T00:00:00');
+    const d = new Date(key + 'T00:00:00');
+    if (d < start) return false;
+    return Math.round((d - start) / 86400000) % 2 === 0;
+  }
+  // Plan diet for a date, with the tablet prepended before breakfast when it applies.
+  function dietForDay(key, prof) {
+    const d = new Date(key + 'T00:00:00');
+    const plan = masterPlan[d.getDay()] || masterPlan[1];
+    return tabletApplies(key, prof) ? [TABLET_ITEM].concat(plan.diet) : plan.diet;
   }
 
   function celebrate() {
@@ -1426,9 +1444,22 @@
   function renderUI() {
     const plan = masterPlan[dayIndex] || masterPlan[1];
 
-    // Render Diet Checklist
-    document.getElementById("diet-checklist").innerHTML = plan.diet.map(item => {
+    // Render Diet Checklist (tablet item appears before breakfast on qualifying days)
+    document.getElementById("diet-checklist").innerHTML = dietForDay(dateKey, profile).map(item => {
       const isDone = completedItems.includes(item.id);
+      if (item.simple) {
+        return `
+        <div class="check-item ${isDone ? 'completed' : ''}">
+          <div class="check-left" onclick="toggleItem('${item.id}')">
+            <div class="custom-checkbox"></div>
+            <div>
+              <span class="item-label">${item.label}</span>
+              <span class="item-sub">${item.sub}</span>
+            </div>
+          </div>
+          <span class="opt-badge" style="background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.3);color:var(--accent-amber);">Every 2 days</span>
+        </div>`;
+      }
       const chosen = isDone ? mealChoices[item.id] : null;   // show pick only once committed
       const multi = item.options && item.options.length > 1;
       const badge = chosen && multi ? ('Option ' + chosen) : (multi ? 'A / B' : 'Info');
@@ -2130,11 +2161,12 @@
       rec = (JSON.parse(localStorage.getItem(metricsKey())) || []).find(h => h.date === key) || null;
     }
 
-    const all = plan.diet.concat(plan.workout);
+    const diet = dietForDay(key, profile);
+    const all = diet.concat(plan.workout);
     const done = all.filter(i => completed.includes(i.id)).length;
     const total = all.length;
     const hasActivity = completed.length > 0 || water > 0 || !!rec || custom.length > 0;
-    return { plan, completed, water, rec, choices, photo, custom, done, total, hasActivity };
+    return { plan, diet, completed, water, rec, choices, photo, custom, done, total, hasActivity };
   }
 
   function changeMonth(delta) {
@@ -2227,7 +2259,7 @@
         <div class="macro-tile fib"><div class="macro-val">${r1(mac.fib)}<span class="macro-unit">g</span></div><div class="macro-label">Fiber</div></div>
       </div>
       <div class="modal-section-title">Diet Plan</div>
-      ${renderList(data.plan.diet, true)}
+      ${renderList(data.diet, true)}
       <div class="modal-section-title">Workout Plan</div>
       ${renderList(data.plan.workout, false)}`;
 
